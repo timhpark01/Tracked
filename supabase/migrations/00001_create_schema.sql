@@ -7,6 +7,11 @@
 -- ============================================================================
 
 -- ============================================================================
+-- STEP 1: CREATE ALL TABLES WITH RLS AND INDEXES
+-- (Policies are created in Step 2 to avoid forward references)
+-- ============================================================================
+
+-- ============================================================================
 -- PROFILES TABLE
 -- Stores user profile information, linked to Supabase auth.users
 -- ============================================================================
@@ -26,6 +31,86 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 CREATE INDEX idx_profiles_id ON profiles(id);
 CREATE INDEX idx_profiles_username ON profiles(username);
 CREATE INDEX idx_profiles_is_public ON profiles(is_public);
+
+-- ============================================================================
+-- HOBBIES TABLE
+-- Stores user hobbies with tracking type (time or quantity)
+-- ============================================================================
+CREATE TABLE hobbies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  category TEXT,
+  tracking_type TEXT NOT NULL CHECK (tracking_type IN ('time', 'quantity')),
+  goal_total INTEGER,
+  goal_unit TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS immediately
+ALTER TABLE hobbies ENABLE ROW LEVEL SECURITY;
+
+-- Indexes for RLS policy columns
+CREATE INDEX idx_hobbies_id ON hobbies(id);
+CREATE INDEX idx_hobbies_user_id ON hobbies(user_id);
+
+-- ============================================================================
+-- FOLLOWS TABLE
+-- Stores social graph (who follows whom)
+-- Created before hobby_logs because hobby_logs policies reference it
+-- ============================================================================
+CREATE TABLE follows (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  follower_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  following_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(follower_id, following_id),
+  CHECK (follower_id != following_id)
+);
+
+-- Enable RLS immediately
+ALTER TABLE follows ENABLE ROW LEVEL SECURITY;
+
+-- Indexes for RLS policy columns
+CREATE INDEX idx_follows_id ON follows(id);
+CREATE INDEX idx_follows_follower_id ON follows(follower_id);
+CREATE INDEX idx_follows_following_id ON follows(following_id);
+
+-- ============================================================================
+-- HOBBY_LOGS TABLE
+-- Stores progress entries for hobbies (time in minutes or quantity units)
+-- ============================================================================
+CREATE TABLE hobby_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  hobby_id UUID NOT NULL REFERENCES hobbies(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  value INTEGER NOT NULL,
+  note TEXT,
+  image_urls TEXT[],
+  logged_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  metadata JSONB DEFAULT '{}'::jsonb
+);
+
+-- Enable RLS immediately
+ALTER TABLE hobby_logs ENABLE ROW LEVEL SECURITY;
+
+-- Indexes for RLS policy columns and common queries
+CREATE INDEX idx_hobby_logs_id ON hobby_logs(id);
+CREATE INDEX idx_hobby_logs_user_id ON hobby_logs(user_id);
+CREATE INDEX idx_hobby_logs_hobby_id ON hobby_logs(hobby_id);
+CREATE INDEX idx_hobby_logs_logged_at ON hobby_logs(logged_at DESC);
+CREATE INDEX idx_hobby_logs_created_at ON hobby_logs(created_at DESC);
+
+-- ============================================================================
+-- STEP 2: CREATE ALL RLS POLICIES
+-- (Now all tables exist, so cross-table references work)
+-- ============================================================================
+
+-- ============================================================================
+-- PROFILES POLICIES
+-- ============================================================================
 
 -- Policy: Anyone can view public profiles
 CREATE POLICY "Public profiles are viewable by everyone"
@@ -53,27 +138,8 @@ TO authenticated
 WITH CHECK ((SELECT auth.uid()) = id);
 
 -- ============================================================================
--- HOBBIES TABLE
--- Stores user hobbies with tracking type (time or quantity)
+-- HOBBIES POLICIES
 -- ============================================================================
-CREATE TABLE hobbies (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  description TEXT,
-  category TEXT,
-  tracking_type TEXT NOT NULL CHECK (tracking_type IN ('time', 'quantity')),
-  goal_total INTEGER,
-  goal_unit TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Enable RLS immediately
-ALTER TABLE hobbies ENABLE ROW LEVEL SECURITY;
-
--- Indexes for RLS policy columns
-CREATE INDEX idx_hobbies_id ON hobbies(id);
-CREATE INDEX idx_hobbies_user_id ON hobbies(user_id);
 
 -- Policy: Users can view their own hobbies
 CREATE POLICY "Users can view own hobbies"
@@ -113,30 +179,48 @@ TO authenticated
 USING ((SELECT auth.uid()) = user_id);
 
 -- ============================================================================
--- HOBBY_LOGS TABLE
--- Stores progress entries for hobbies (time in minutes or quantity units)
+-- FOLLOWS POLICIES
 -- ============================================================================
-CREATE TABLE hobby_logs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  hobby_id UUID NOT NULL REFERENCES hobbies(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  value INTEGER NOT NULL,
-  note TEXT,
-  image_urls TEXT[],
-  logged_at TIMESTAMPTZ DEFAULT NOW(),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  metadata JSONB DEFAULT '{}'::jsonb
+
+-- Policy: Users can view who they follow
+CREATE POLICY "Users can view own follows"
+ON follows FOR SELECT
+TO authenticated
+USING ((SELECT auth.uid()) = follower_id);
+
+-- Policy: Users can view their followers
+CREATE POLICY "Users can view own followers"
+ON follows FOR SELECT
+TO authenticated
+USING ((SELECT auth.uid()) = following_id);
+
+-- Policy: Anyone can view follows of public profiles
+CREATE POLICY "Public follows are viewable"
+ON follows FOR SELECT
+TO authenticated, anon
+USING (
+  EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.id = follows.following_id
+    AND profiles.is_public = true
+  )
 );
 
--- Enable RLS immediately
-ALTER TABLE hobby_logs ENABLE ROW LEVEL SECURITY;
+-- Policy: Users can follow others (insert)
+CREATE POLICY "Users can follow"
+ON follows FOR INSERT
+TO authenticated
+WITH CHECK ((SELECT auth.uid()) = follower_id);
 
--- Indexes for RLS policy columns and common queries
-CREATE INDEX idx_hobby_logs_id ON hobby_logs(id);
-CREATE INDEX idx_hobby_logs_user_id ON hobby_logs(user_id);
-CREATE INDEX idx_hobby_logs_hobby_id ON hobby_logs(hobby_id);
-CREATE INDEX idx_hobby_logs_logged_at ON hobby_logs(logged_at DESC);
-CREATE INDEX idx_hobby_logs_created_at ON hobby_logs(created_at DESC);
+-- Policy: Users can unfollow (delete)
+CREATE POLICY "Users can unfollow"
+ON follows FOR DELETE
+TO authenticated
+USING ((SELECT auth.uid()) = follower_id);
+
+-- ============================================================================
+-- HOBBY_LOGS POLICIES
+-- ============================================================================
 
 -- Policy: Users can view their own logs
 CREATE POLICY "Users can view own logs"
@@ -182,63 +266,6 @@ CREATE POLICY "Users can delete own logs"
 ON hobby_logs FOR DELETE
 TO authenticated
 USING ((SELECT auth.uid()) = user_id);
-
--- ============================================================================
--- FOLLOWS TABLE
--- Stores social graph (who follows whom)
--- ============================================================================
-CREATE TABLE follows (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  follower_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  following_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(follower_id, following_id),
-  CHECK (follower_id != following_id)
-);
-
--- Enable RLS immediately
-ALTER TABLE follows ENABLE ROW LEVEL SECURITY;
-
--- Indexes for RLS policy columns
-CREATE INDEX idx_follows_id ON follows(id);
-CREATE INDEX idx_follows_follower_id ON follows(follower_id);
-CREATE INDEX idx_follows_following_id ON follows(following_id);
-
--- Policy: Users can view who they follow
-CREATE POLICY "Users can view own follows"
-ON follows FOR SELECT
-TO authenticated
-USING ((SELECT auth.uid()) = follower_id);
-
--- Policy: Users can view their followers
-CREATE POLICY "Users can view own followers"
-ON follows FOR SELECT
-TO authenticated
-USING ((SELECT auth.uid()) = following_id);
-
--- Policy: Anyone can view follows of public profiles
-CREATE POLICY "Public follows are viewable"
-ON follows FOR SELECT
-TO authenticated, anon
-USING (
-  EXISTS (
-    SELECT 1 FROM profiles
-    WHERE profiles.id = follows.following_id
-    AND profiles.is_public = true
-  )
-);
-
--- Policy: Users can follow others (insert)
-CREATE POLICY "Users can follow"
-ON follows FOR INSERT
-TO authenticated
-WITH CHECK ((SELECT auth.uid()) = follower_id);
-
--- Policy: Users can unfollow (delete)
-CREATE POLICY "Users can unfollow"
-ON follows FOR DELETE
-TO authenticated
-USING ((SELECT auth.uid()) = follower_id);
 
 -- ============================================================================
 -- TRIGGER: Auto-create profile on user signup
