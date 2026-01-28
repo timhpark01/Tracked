@@ -4,15 +4,23 @@ import {
   Text,
   Image,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   ActivityIndicator,
   ScrollView,
 } from 'react-native'
 import { router } from 'expo-router'
 import { useMyProfile } from '@/features/profiles'
+import { useFollowers, useFollowing } from '@/features/social'
+import { useAuth } from '@/features/auth'
 
 export default function ProfileScreen() {
+  const { user } = useAuth()
   const { data: profile, isLoading, error } = useMyProfile()
+
+  // Follower/following counts
+  const { data: followers } = useFollowers(user?.id || '')
+  const { data: following } = useFollowing(user?.id || '')
 
   if (isLoading) {
     return (
@@ -72,6 +80,24 @@ export default function ProfileScreen() {
 
       {/* Username */}
       <Text style={styles.username}>@{profile.username}</Text>
+
+      {/* Stats Row */}
+      <View style={styles.statsRow}>
+        <Pressable
+          style={styles.statItem}
+          onPress={() => router.push(`/profile/followers?userId=${user?.id}`)}
+        >
+          <Text style={styles.statNumber}>{followers?.length ?? 0}</Text>
+          <Text style={styles.statLabel}>Followers</Text>
+        </Pressable>
+        <Pressable
+          style={styles.statItem}
+          onPress={() => router.push(`/profile/following?userId=${user?.id}`)}
+        >
+          <Text style={styles.statNumber}>{following?.length ?? 0}</Text>
+          <Text style={styles.statLabel}>Following</Text>
+        </Pressable>
+      </View>
 
       {/* Bio */}
       {profile.bio ? (
@@ -210,5 +236,23 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontSize: 14,
     fontWeight: '500',
+  },
+  // Stats row
+  statsRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  statItem: {
+    alignItems: 'center',
+    marginHorizontal: 16,
+  },
+  statNumber: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#6b7280',
   },
 })

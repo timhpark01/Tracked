@@ -26,6 +26,18 @@ export default function ProfileLayout() {
           title: 'Profile',
         }}
       />
+      <Stack.Screen
+        name="followers"
+        options={{
+          title: 'Followers',
+        }}
+      />
+      <Stack.Screen
+        name="following"
+        options={{
+          title: 'Following',
+        }}
+      />
     </Stack>
   )
 }
