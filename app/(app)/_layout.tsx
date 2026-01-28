@@ -1,4 +1,4 @@
-import { Redirect, Stack } from 'expo-router'
+import { Redirect, Tabs } from 'expo-router'
 import { View, ActivityIndicator, StyleSheet } from 'react-native'
 import { useAuth } from '@/features/auth'
 
@@ -19,18 +19,38 @@ export default function AppLayout() {
     return <Redirect href="/(auth)/login" />
   }
 
-  // Render protected screens
+  // Render tab navigation
   return (
-    <Stack>
-      <Stack.Screen
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: '#007AFF',
+        headerShown: true,
+      }}
+    >
+      <Tabs.Screen
         name="index"
-        options={{ title: 'Home' }}
+        options={{
+          title: 'Home',
+          tabBarLabel: 'Home',
+        }}
       />
-      <Stack.Screen
+      <Tabs.Screen
         name="hobbies"
-        options={{ headerShown: false }}
+        options={{
+          title: 'Hobbies',
+          tabBarLabel: 'Hobbies',
+          headerShown: false, // Stack handles its own header
+        }}
       />
-    </Stack>
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarLabel: 'Profile',
+          headerShown: false, // Stack handles its own header
+        }}
+      />
+    </Tabs>
   )
 }
 
