@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Auth** - Infrastructure and user accounts with security
 - [x] **Phase 2: Core Tracking** - Solo tracking with profiles, hobbies, logs, and stats
-- [ ] **Phase 3: Social Graph** - Follow system and user discovery
+- [x] **Phase 3: Social Graph** - Follow system and user discovery
 - [ ] **Phase 4: Activity Feed** - Social feed with privacy controls
 
 ## Phase Details
@@ -68,9 +68,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Social feature module (service layer, query/mutation hooks)
-- [ ] 03-02-PLAN.md — User search (search screen with debounced input, results list)
-- [ ] 03-03-PLAN.md — Follow UI (follow button on profiles, followers/following lists)
+- [x] 03-01-PLAN.md — Social feature module (service layer, query/mutation hooks)
+- [x] 03-02-PLAN.md — User search (search screen with debounced input, results list)
+- [x] 03-03-PLAN.md — Follow UI (follow button on profiles, followers/following lists)
 
 ### Phase 4: Activity Feed
 **Goal**: Users can see friends' progress in a privacy-aware activity feed
@@ -95,7 +95,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Foundation & Auth | 3/3 | Complete | 2026-01-28 |
 | 2. Core Tracking | 5/5 | Complete | 2026-01-28 |
-| 3. Social Graph | 0/3 | Ready | - |
+| 3. Social Graph | 3/3 | Complete | 2026-01-28 |
 | 4. Activity Feed | 0/TBD | Not started | - |
 
 ---
