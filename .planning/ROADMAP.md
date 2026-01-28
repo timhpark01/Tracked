@@ -81,10 +81,11 @@ Plans:
   2. Feed displays log details (user, hobby, value, notes, photo)
   3. Feed loads more items on scroll (pagination)
   4. Logs are only visible to owner or owner's followers (enforced by RLS)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: [Plan pending]
+- [ ] 04-01-PLAN.md — Feed data layer (service with paginated query, useFeed hook, cache invalidation)
+- [ ] 04-02-PLAN.md — Feed UI (FeedItem, FeedList with infinite scroll, home tab integration)
 
 ## Progress
 
@@ -96,7 +97,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | 1. Foundation & Auth | 3/3 | Complete | 2026-01-28 |
 | 2. Core Tracking | 5/5 | Complete | 2026-01-28 |
 | 3. Social Graph | 3/3 | Complete | 2026-01-28 |
-| 4. Activity Feed | 0/TBD | Not started | - |
+| 4. Activity Feed | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-01-28*
