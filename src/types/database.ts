@@ -1,7 +1,4 @@
 // src/types/database.ts
-// Generated types for Supabase database
-// Can be regenerated with: supabase gen types typescript --local > src/types/database.ts
-
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export interface Database {
@@ -123,18 +120,6 @@ export interface Database {
           created_at?: string
         }
       }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      [_ in never]: never
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
     }
   }
 }
