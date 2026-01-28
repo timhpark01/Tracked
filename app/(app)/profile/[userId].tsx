@@ -6,13 +6,34 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
+  Pressable,
 } from 'react-native'
-import { useLocalSearchParams } from 'expo-router'
+import { useLocalSearchParams, router } from 'expo-router'
 import { useProfile } from '@/features/profiles'
+import { useIsFollowing, useFollowUser, useUnfollowUser, useFollowers, useFollowing } from '@/features/social'
 
 export default function UserProfileScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>()
   const { data: profile, isLoading, error } = useProfile(userId || '')
+
+  // Follow/unfollow functionality
+  const { data: isFollowing, isLoading: checkingFollow } = useIsFollowing(userId || '')
+  const followMutation = useFollowUser()
+  const unfollowMutation = useUnfollowUser()
+  const isPending = followMutation.isPending || unfollowMutation.isPending
+
+  // Follower/following counts
+  const { data: followers } = useFollowers(userId || '')
+  const { data: following } = useFollowing(userId || '')
+
+  const handleFollow = () => {
+    if (!userId) return
+    if (isFollowing) {
+      unfollowMutation.mutate({ followingId: userId })
+    } else {
+      followMutation.mutate({ followingId: userId })
+    }
+  }
 
   if (isLoading) {
     return (
@@ -65,6 +86,24 @@ export default function UserProfileScreen() {
       {/* Username */}
       <Text style={styles.username}>@{profile.username}</Text>
 
+      {/* Stats Row */}
+      <View style={styles.statsRow}>
+        <Pressable
+          style={styles.statItem}
+          onPress={() => router.push(`/profile/followers?userId=${userId}`)}
+        >
+          <Text style={styles.statNumber}>{followers?.length ?? 0}</Text>
+          <Text style={styles.statLabel}>Followers</Text>
+        </Pressable>
+        <Pressable
+          style={styles.statItem}
+          onPress={() => router.push(`/profile/following?userId=${userId}`)}
+        >
+          <Text style={styles.statNumber}>{following?.length ?? 0}</Text>
+          <Text style={styles.statLabel}>Following</Text>
+        </Pressable>
+      </View>
+
       {/* Bio */}
       {profile.bio ? (
         <Text style={styles.bio}>{profile.bio}</Text>
@@ -72,7 +111,29 @@ export default function UserProfileScreen() {
         <Text style={styles.noBio}>No bio</Text>
       )}
 
-      {/* No edit button - this is viewing another user's profile (PROF-04) */}
+      {/* Follow button - only show if not loading */}
+      {!checkingFollow && (
+        <Pressable
+          style={[
+            styles.followButton,
+            isFollowing && styles.followButtonFollowing,
+            isPending && styles.followButtonDisabled,
+          ]}
+          onPress={handleFollow}
+          disabled={isPending}
+        >
+          {isPending ? (
+            <ActivityIndicator size="small" color={isFollowing ? '#374151' : '#fff'} />
+          ) : (
+            <Text style={[
+              styles.followButtonText,
+              isFollowing && styles.followButtonTextFollowing,
+            ]}>
+              {isFollowing ? 'Unfollow' : 'Follow'}
+            </Text>
+          )}
+        </Pressable>
+      )}
     </ScrollView>
   )
 }
@@ -164,5 +225,49 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#9ca3af',
     fontStyle: 'italic',
+  },
+  // Stats row
+  statsRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  statItem: {
+    alignItems: 'center',
+    marginHorizontal: 16,
+  },
+  statNumber: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  // Follow button
+  followButton: {
+    backgroundColor: '#3b82f6',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+    marginTop: 24,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  followButtonFollowing: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+  },
+  followButtonDisabled: {
+    opacity: 0.7,
+  },
+  followButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  followButtonTextFollowing: {
+    color: '#374151',
   },
 })
