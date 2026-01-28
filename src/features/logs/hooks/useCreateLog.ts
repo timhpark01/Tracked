@@ -41,6 +41,8 @@ export function useCreateLog() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['logs', variables.hobbyId] })
       queryClient.invalidateQueries({ queryKey: ['hobby-stats', variables.hobbyId] })
+      // Invalidate feed so followers see the new log
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
     },
   })
 }
