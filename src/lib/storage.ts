@@ -1,6 +1,6 @@
 // src/lib/storage.ts
 import * as ImagePicker from 'expo-image-picker'
-import { File } from 'expo-file-system'
+import { readAsStringAsync, EncodingType } from 'expo-file-system/legacy'
 import { decode } from 'base64-arraybuffer'
 import { supabase } from './supabase'
 
@@ -67,9 +67,13 @@ export async function uploadImage(
   path: string,
   uri: string
 ): Promise<string> {
-  // Create File instance and read as ArrayBuffer directly (expo-file-system v19+)
-  const file = new File(uri)
-  const arrayBuffer = await file.arrayBuffer()
+  // Read file as base64 using expo-file-system legacy API
+  const base64 = await readAsStringAsync(uri, {
+    encoding: EncodingType.Base64,
+  })
+
+  // Convert base64 to ArrayBuffer for Supabase
+  const arrayBuffer = decode(base64)
 
   // Upload to Supabase Storage
   const { data, error } = await supabase.storage
