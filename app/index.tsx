@@ -3,7 +3,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native'
 import { useAuth } from '@/features/auth'
 
 export default function Index() {
-  const { session, loading } = useAuth()
+  const { session, loading, needsProfileSetup } = useAuth()
 
   if (loading) {
     return (
@@ -15,6 +15,10 @@ export default function Index() {
 
   // Redirect based on auth state
   if (session) {
+    // If user needs to complete profile setup (phone signup without username)
+    if (needsProfileSetup) {
+      return <Redirect href="/(auth)/username" />
+    }
     return <Redirect href="/(app)" />
   }
 
