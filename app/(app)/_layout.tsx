@@ -1,5 +1,6 @@
 import { Redirect, Tabs } from 'expo-router'
 import { View, ActivityIndicator, StyleSheet } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '@/features/auth'
 
 export default function AppLayout() {
@@ -40,6 +41,17 @@ export default function AppLayout() {
           title: 'Hobbies',
           tabBarLabel: 'Hobbies',
           headerShown: false, // Stack handles its own header
+        }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: 'Search',
+          tabBarLabel: 'Search',
+          headerShown: false, // Stack handles its own header
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="search" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
