@@ -1,10 +1,11 @@
-import { Redirect } from 'expo-router'
+import { Redirect, Stack } from 'expo-router'
 import { View, ActivityIndicator, StyleSheet } from 'react-native'
 import { useAuth } from '@/features/auth'
 
-export default function Index() {
+export default function AppLayout() {
   const { session, loading } = useAuth()
 
+  // Show loading screen while checking session
   if (loading) {
     return (
       <View style={styles.loading}>
@@ -13,12 +14,20 @@ export default function Index() {
     )
   }
 
-  // Redirect based on auth state
-  if (session) {
-    return <Redirect href="/(app)" />
+  // Redirect to login if not authenticated
+  if (!session) {
+    return <Redirect href="/(auth)/login" />
   }
 
-  return <Redirect href="/(auth)/login" />
+  // Render protected screens
+  return (
+    <Stack>
+      <Stack.Screen
+        name="index"
+        options={{ title: 'Home' }}
+      />
+    </Stack>
+  )
 }
 
 const styles = StyleSheet.create({
