@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation & Auth** - Infrastructure and user accounts with security
 - [x] **Phase 2: Core Tracking** - Solo tracking with profiles, hobbies, logs, and stats
 - [x] **Phase 3: Social Graph** - Follow system and user discovery
-- [ ] **Phase 4: Activity Feed** - Social feed with privacy controls
+- [x] **Phase 4: Activity Feed** - Social feed with privacy controls
 
 ## Phase Details
 
@@ -84,8 +84,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Feed data layer (service with paginated query, useFeed hook, cache invalidation)
-- [ ] 04-02-PLAN.md — Feed UI (FeedItem, FeedList with infinite scroll, home tab integration)
+- [x] 04-01-PLAN.md — Feed data layer (service with paginated query, useFeed hook, cache invalidation)
+- [x] 04-02-PLAN.md — Feed UI (FeedItem, FeedList with infinite scroll, home tab integration)
 
 ## Progress
 
@@ -97,7 +97,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | 1. Foundation & Auth | 3/3 | Complete | 2026-01-28 |
 | 2. Core Tracking | 5/5 | Complete | 2026-01-28 |
 | 3. Social Graph | 3/3 | Complete | 2026-01-28 |
-| 4. Activity Feed | 0/2 | Not started | - |
+| 4. Activity Feed | 2/2 | Complete | 2026-01-28 |
 
 ---
 *Roadmap created: 2026-01-28*
