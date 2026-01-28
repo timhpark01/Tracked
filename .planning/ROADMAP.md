@@ -65,10 +65,12 @@ Plans:
   2. User can follow and unfollow users
   3. User can view their followers list and following list
   4. User can view other users' profiles
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: [Plan pending]
+- [ ] 03-01-PLAN.md — Social feature module (service layer, query/mutation hooks)
+- [ ] 03-02-PLAN.md — User search (search screen with debounced input, results list)
+- [ ] 03-03-PLAN.md — Follow UI (follow button on profiles, followers/following lists)
 
 ### Phase 4: Activity Feed
 **Goal**: Users can see friends' progress in a privacy-aware activity feed
@@ -93,7 +95,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Foundation & Auth | 3/3 | Complete | 2026-01-28 |
 | 2. Core Tracking | 5/5 | Complete | 2026-01-28 |
-| 3. Social Graph | 0/TBD | Ready | - |
+| 3. Social Graph | 0/3 | Ready | - |
 | 4. Activity Feed | 0/TBD | Not started | - |
 
 ---
