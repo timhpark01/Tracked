@@ -1,105 +1,231 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native'
-import { router } from 'expo-router'
+import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert, StyleSheet } from 'react-native'
+import { Link } from 'expo-router'
 import { useAuth, signOut } from '@/features/auth'
+import { useMyProfile } from '@/features/profiles'
+import { useHobbies } from '@/features/hobbies'
 
 export default function HomeScreen() {
   const { user } = useAuth()
+  const { data: profile, isLoading: profileLoading } = useMyProfile()
+  const { data: hobbies, isLoading: hobbiesLoading } = useHobbies()
 
-  const handleLogout = async () => {
+  const isLoading = profileLoading || hobbiesLoading
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    )
+  }
+
+  const recentHobbies = hobbies?.slice(0, 3) ?? []
+  const hasProfile = !!profile?.username
+
+  const handleSignOut = async () => {
     try {
       await signOut()
-      router.replace('/(auth)/login')
     } catch (error: any) {
       Alert.alert('Error', error.message)
     }
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome!</Text>
-      <Text style={styles.subtitle}>Logged in as: {user?.email}</Text>
+    <ScrollView style={styles.container}>
+      <View style={styles.content}>
+        {/* Welcome Section */}
+        <Text style={styles.welcomeText}>
+          Welcome{profile?.username ? `, ${profile.username}` : ''}!
+        </Text>
 
-      <View style={styles.buttonsContainer}>
-        {/* Hobbies button */}
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => router.push('/hobbies')}
-        >
-          <Text style={styles.primaryButtonText}>My Hobbies</Text>
-        </TouchableOpacity>
+        {/* Profile CTA if not set up */}
+        {!hasProfile && (
+          <Link href="/profile/edit" asChild>
+            <Pressable style={styles.profileCta}>
+              <Text style={styles.profileCtaTitle}>Complete your profile</Text>
+              <Text style={styles.profileCtaSubtitle}>Add a username and avatar to get started</Text>
+            </Pressable>
+          </Link>
+        )}
 
-        {/* Profile button */}
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => router.push('/profile')}
-        >
-          <Text style={styles.secondaryButtonText}>View Profile</Text>
-        </TouchableOpacity>
+        {/* Quick Stats */}
+        <View style={styles.statsCard}>
+          <Text style={styles.sectionTitle}>Your Progress</Text>
+          <Text style={styles.statsText}>
+            {hobbies?.length ?? 0} hobbies tracked
+          </Text>
+        </View>
+
+        {/* Recent Hobbies */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Recent Hobbies</Text>
+            <Link href="/hobbies" asChild>
+              <Pressable>
+                <Text style={styles.seeAllText}>See all</Text>
+              </Pressable>
+            </Link>
+          </View>
+
+          {recentHobbies.length === 0 ? (
+            <Link href="/hobbies/new" asChild>
+              <Pressable style={styles.emptyHobbiesCard}>
+                <Text style={styles.emptyHobbiesText}>
+                  No hobbies yet. Tap to create your first!
+                </Text>
+              </Pressable>
+            </Link>
+          ) : (
+            recentHobbies.map((hobby) => (
+              <Link key={hobby.id} href={`/hobbies/${hobby.id}`} asChild>
+                <Pressable style={styles.hobbyCard}>
+                  <Text style={styles.hobbyName}>{hobby.name}</Text>
+                  <Text style={styles.hobbyType}>
+                    {hobby.tracking_type} tracking
+                  </Text>
+                </Pressable>
+              </Link>
+            ))
+          )}
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.actionsRow}>
+          <Link href="/hobbies/new" asChild>
+            <Pressable style={styles.primaryButton}>
+              <Text style={styles.primaryButtonText}>New Hobby</Text>
+            </Pressable>
+          </Link>
+          <Pressable style={styles.secondaryButton} onPress={handleSignOut}>
+            <Text style={styles.secondaryButtonText}>Sign Out</Text>
+          </Pressable>
+        </View>
       </View>
-
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Sign Out</Text>
-      </TouchableOpacity>
-    </View>
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
     backgroundColor: '#fff',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginTop: 48,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 32,
-  },
-  buttonsContainer: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
-    gap: 16,
-    padding: 24,
+    alignItems: 'center',
+  },
+  content: {
+    padding: 16,
+  },
+  welcomeText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  profileCta: {
+    backgroundColor: '#EBF5FF',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  profileCtaTitle: {
+    color: '#1D4ED8',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  profileCtaSubtitle: {
+    color: '#3B82F6',
+    fontSize: 14,
+    marginTop: 4,
+  },
+  statsCard: {
+    backgroundColor: '#F9FAFB',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  statsText: {
+    color: '#6B7280',
+    fontSize: 16,
+  },
+  section: {
+    marginBottom: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  seeAllText: {
+    color: '#007AFF',
+    fontSize: 14,
+  },
+  emptyHobbiesCard: {
+    backgroundColor: '#F9FAFB',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#D1D5DB',
+  },
+  emptyHobbiesText: {
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  hobbyCard: {
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 8,
+  },
+  hobbyName: {
+    fontWeight: '500',
+    fontSize: 16,
+  },
+  hobbyType: {
+    color: '#6B7280',
+    fontSize: 14,
+    textTransform: 'capitalize',
+    marginTop: 2,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
   },
   primaryButton: {
+    flex: 1,
     backgroundColor: '#007AFF',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    padding: 14,
     borderRadius: 12,
     alignItems: 'center',
   },
   primaryButtonText: {
     color: '#fff',
-    fontSize: 18,
     fontWeight: '600',
+    fontSize: 16,
   },
   secondaryButton: {
-    backgroundColor: '#f3f4f6',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 8,
+    flex: 1,
+    backgroundColor: '#E5E7EB',
+    padding: 14,
+    borderRadius: 12,
     alignItems: 'center',
   },
   secondaryButtonText: {
     color: '#374151',
-    fontSize: 16,
     fontWeight: '600',
-  },
-  logoutButton: {
-    padding: 16,
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  logoutText: {
-    color: '#FF3B30',
     fontSize: 16,
-    fontWeight: '600',
   },
 })
