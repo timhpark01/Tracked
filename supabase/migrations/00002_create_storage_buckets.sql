@@ -31,6 +31,15 @@ USING (
   AND (storage.foldername(name))[1] = auth.uid()::text
 );
 
+-- Policy: Users can delete their own avatar (needed for upsert)
+CREATE POLICY "Users can delete own avatar"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (
+  bucket_id = 'avatars'
+  AND (storage.foldername(name))[1] = auth.uid()::text
+);
+
 -- Policies for log-photos bucket
 CREATE POLICY "Log photos are publicly accessible"
 ON storage.objects FOR SELECT
