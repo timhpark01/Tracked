@@ -29,10 +29,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can log out from any screen
   4. Database schema exists with RLS enabled on all tables
   5. Supabase client is configured and TanStack Query is initialized
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: [Plan pending]
+- [ ] 01-01-PLAN.md — Project & Database Foundation (Expo init, Supabase schema with RLS)
+- [ ] 01-02-PLAN.md — Auth Infrastructure (Supabase client, TanStack Query, auth hooks)
+- [ ] 01-03-PLAN.md — Auth Screens (Login, signup, protected routes)
 
 ### Phase 2: Core Tracking
 **Goal**: Users can track progress across multiple hobbies with logs and view their growth
@@ -85,7 +87,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Auth | 0/TBD | Not started | - |
+| 1. Foundation & Auth | 0/3 | Ready to execute | - |
 | 2. Core Tracking | 0/TBD | Not started | - |
 | 3. Social Graph | 0/TBD | Not started | - |
 | 4. Activity Feed | 0/TBD | Not started | - |
