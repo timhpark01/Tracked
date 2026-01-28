@@ -29,6 +29,7 @@ export interface Database {
           is_public?: boolean
           created_at?: string
         }
+        Relationships: []
       }
       hobbies: {
         Row: {
@@ -64,6 +65,15 @@ export interface Database {
           goal_unit?: string | null
           created_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: 'hobbies_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
       }
       hobby_logs: {
         Row: {
@@ -99,6 +109,22 @@ export interface Database {
           created_at?: string
           metadata?: Json
         }
+        Relationships: [
+          {
+            foreignKeyName: 'hobby_logs_hobby_id_fkey'
+            columns: ['hobby_id']
+            isOneToOne: false
+            referencedRelation: 'hobbies'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'hobby_logs_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
       }
       follows: {
         Row: {
@@ -119,7 +145,35 @@ export interface Database {
           following_id?: string
           created_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: 'follows_follower_id_fkey'
+            columns: ['follower_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'follows_following_id_fkey'
+            columns: ['following_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
       }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }
