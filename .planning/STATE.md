@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Progress visibility — users can see their own growth over time and celebrate milestones
-**Current focus:** Phase 3 - Social Graph
+**Current focus:** Phase 4 - Activity Feed
 
 ## Current Position
 
-Phase: 3 of 4 (Social Graph)
-Plan: 3 of 3 complete
-Status: Phase complete
-Last activity: 2026-01-28 — Completed 03-03-PLAN.md
+Phase: 4 of 4 (Activity Feed)
+Plan: 1 of 2 complete
+Status: In progress
+Last activity: 2026-01-28 — Completed 04-01-PLAN.md
 
-Progress: [█████████░] 85% (11 of 13 plans complete)
+Progress: [█████████░] 92% (12 of 13 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
+- Total plans completed: 12
 - Average duration: ~4 min per plan
-- Total execution time: ~46 min
+- Total execution time: ~49 min
 
 **By Phase:**
 
@@ -30,9 +30,10 @@ Progress: [█████████░] 85% (11 of 13 plans complete)
 | 1 | 3 | ~15 min | ~5 min |
 | 2 | 5 | ~25 min | ~5 min |
 | 3 | 3 | ~6 min | ~2 min |
+| 4 | 1 | ~3 min | ~3 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-04, 02-05, 03-01, 03-02, 03-03
+- Last 5 plans: 02-05, 03-01, 03-02, 03-03, 04-01
 - Trend: Consistent velocity
 
 *Updated after each plan completion*
@@ -63,6 +64,8 @@ Recent decisions affecting current work:
 - Optimistic isFollowing updates only (not list updates) for simpler rollback (03-01)
 - 300ms debounce delay for search input (03-02)
 - Query params for userId in list screens (simpler than route params) (03-03)
+- PAGE_SIZE=20 for feed pagination, 2-minute staleTime for feeds (04-01)
+- Stable pagination sort: ORDER BY logged_at DESC, id DESC (04-01)
 
 ### Pending Todos
 
@@ -74,9 +77,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-28T20:03:53Z
-Stopped at: Completed 03-03-PLAN.md
+Last session: 2026-01-28T20:44:30Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
 
 ---
-*Phase 3 complete. Social graph ready (service hooks, search UI, follow button, social lists). Ready for Phase 4 (Milestones).*
+*Phase 4 in progress. Feed data layer complete (service, hook, cache invalidation). Ready for Feed UI (04-02).*
