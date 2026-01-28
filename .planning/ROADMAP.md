@@ -12,7 +12,7 @@ Tracked delivers a mobile-first social network for tracking hobby progress acros
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [x] **Phase 1: Foundation & Auth** - Infrastructure and user accounts with security ✓
+- [x] **Phase 1: Foundation & Auth** - Infrastructure and user accounts with security
 - [ ] **Phase 2: Core Tracking** - Solo tracking with profiles, hobbies, logs, and stats
 - [ ] **Phase 3: Social Graph** - Follow system and user discovery
 - [ ] **Phase 4: Activity Feed** - Social feed with privacy controls
@@ -47,10 +47,14 @@ Plans:
   4. User can create log entries with value, notes, and photos
   5. User can see progress toward goals with stats (total, count, history)
   6. User can only modify their own hobbies and logs (enforced by RLS)
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 02-01: [Plan pending]
+- [ ] 02-01-PLAN.md — Infrastructure (storage utilities, form components, storage buckets)
+- [ ] 02-02-PLAN.md — Profile feature (service, hooks, screens for view/edit profile)
+- [ ] 02-03-PLAN.md — Hobby feature (CRUD service, hooks, screens for hobby management)
+- [ ] 02-04-PLAN.md — Log & Stats feature (logging with photos, progress calculation)
+- [ ] 02-05-PLAN.md — Integration & Verification (tab navigation, end-to-end flow)
 
 ### Phase 3: Social Graph
 **Goal**: Users can follow others and build their social network
@@ -83,12 +87,12 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Auth | 3/3 | ✓ Complete | 2026-01-28 |
-| 2. Core Tracking | 0/TBD | Ready | - |
+| 1. Foundation & Auth | 3/3 | Complete | 2026-01-28 |
+| 2. Core Tracking | 0/5 | Ready | - |
 | 3. Social Graph | 0/TBD | Not started | - |
 | 4. Activity Feed | 0/TBD | Not started | - |
 
