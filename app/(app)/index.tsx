@@ -21,9 +21,17 @@ export default function HomeScreen() {
 
       <View style={styles.placeholder}>
         <Text style={styles.placeholderText}>
-          Your hobbies and progress will appear here in Phase 2
+          Your hobbies and progress will appear here soon
         </Text>
       </View>
+
+      {/* Profile button */}
+      <TouchableOpacity
+        style={styles.profileButton}
+        onPress={() => router.push('/profile')}
+      >
+        <Text style={styles.profileButtonText}>View Profile</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>Sign Out</Text>
@@ -59,6 +67,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#999',
     textAlign: 'center',
+  },
+  profileButton: {
+    backgroundColor: '#3b82f6',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  profileButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   logoutButton: {
     padding: 16,
