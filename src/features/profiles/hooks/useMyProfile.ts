@@ -11,7 +11,7 @@ export function useMyProfile() {
   const { user } = useAuth()
 
   return useQuery({
-    queryKey: ['my-profile'],
+    queryKey: ['my-profile', user?.id],
     queryFn: () => getProfile(user!.id),
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // 5 minutes
