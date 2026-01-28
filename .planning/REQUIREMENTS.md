@@ -9,10 +9,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can sign up with email and password
-- [ ] **AUTH-02**: User can log in with existing credentials
-- [ ] **AUTH-03**: User session persists across app restarts
-- [ ] **AUTH-04**: User can log out from any screen
+- [x] **AUTH-01**: User can sign up with email and password
+- [x] **AUTH-02**: User can log in with existing credentials
+- [x] **AUTH-03**: User session persists across app restarts
+- [x] **AUTH-04**: User can log out from any screen
 
 ### Profiles
 
@@ -63,7 +63,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Privacy
 
-- [ ] **PRIV-01**: Profiles are public (viewable by anyone)
+- [x] **PRIV-01**: Profiles are public (viewable by anyone)
 - [ ] **PRIV-02**: User can only insert/update/delete their own hobbies
 - [ ] **PRIV-03**: User can only insert/update/delete their own logs
 - [ ] **PRIV-04**: Logs are viewable by owner OR followers of owner
@@ -113,11 +113,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| AUTH-04 | Phase 1 | Pending |
-| PRIV-01 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
+| AUTH-03 | Phase 1 | Complete |
+| AUTH-04 | Phase 1 | Complete |
+| PRIV-01 | Phase 1 | Complete |
 | PROF-01 | Phase 2 | Pending |
 | PROF-02 | Phase 2 | Pending |
 | PROF-03 | Phase 2 | Pending |

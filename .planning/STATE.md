@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Progress visibility — users can see their own growth over time and celebrate milestones
-**Current focus:** Phase 1 - Foundation & Auth
+**Current focus:** Phase 2 - Core Tracking
 
 ## Current Position
 
-Phase: 1 of 4 (Foundation & Auth)
-Plan: 2 of 3 (Wave 2 in progress)
-Status: In progress
-Last activity: 2026-01-28 — Completed 01-02-PLAN.md (Data Layer & Auth Infrastructure)
+Phase: 2 of 4 (Core Tracking)
+Plan: Not started (ready to plan)
+Status: Phase 1 complete, ready to plan Phase 2
+Last activity: 2026-01-28 — Phase 1 (Foundation & Auth) completed with 3 plans
 
-Progress: [████░░░░░░] ~40% (2/5 phase 1 plans complete, assuming ~5 total across all phases estimate)
+Progress: [██░░░░░░░░] 25%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: ~10 min
-- Total execution time: ~20 min
+- Total plans completed: 3
+- Average duration: ~5 min per plan
+- Total execution time: ~15 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation-auth | 2/3 | ~20 min | ~10 min |
+| 1 | 3 | ~15 min | ~5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (10min), 01-02 (3min)
-- Trend: Accelerating
+- Last 5 plans: 01-01, 01-02, 01-03
+- Trend: Baseline established
 
 *Updated after each plan completion*
 
@@ -45,9 +45,10 @@ Recent decisions affecting current work:
 - Tech stack: React Native/Expo, NativeWind, Supabase, TanStack Query (decided before roadmap)
 - Security: RLS-first approach, enable on all tables from day one
 - Social model: Follow-based (not groups-first) for simpler initial social graph
-- AsyncStorage for native session persistence, localStorage for web (01-02)
-- 24-hour gcTime and 5-minute staleTime for mobile-optimized caching (01-02)
-- Feature-based organization: features/{name}/hooks, features/{name}/services (01-02)
+- Migration ordering: Tables before policies to avoid forward references
+- AsyncStorage for native session persistence, localStorage for web
+- 24-hour gcTime and 5-minute staleTime for mobile-optimized caching
+- Feature-based organization: features/{name}/hooks, features/{name}/services
 
 ### Pending Todos
 
@@ -59,9 +60,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-28
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-01-28 (Phase 1 execution)
+Stopped at: Phase 1 complete, ready for Phase 2 planning
 Resume file: None
 
 ---
-*Next step: Complete 01-03-PLAN.md (Auth Screens)*
+*Next step: /gsd:plan-phase 2*
