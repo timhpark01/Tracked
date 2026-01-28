@@ -19,19 +19,23 @@ export default function HomeScreen() {
       <Text style={styles.title}>Welcome!</Text>
       <Text style={styles.subtitle}>Logged in as: {user?.email}</Text>
 
-      <View style={styles.placeholder}>
-        <Text style={styles.placeholderText}>
-          Your hobbies and progress will appear here soon
-        </Text>
-      </View>
+      <View style={styles.buttonsContainer}>
+        {/* Hobbies button */}
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => router.push('/hobbies')}
+        >
+          <Text style={styles.primaryButtonText}>My Hobbies</Text>
+        </TouchableOpacity>
 
-      {/* Profile button */}
-      <TouchableOpacity
-        style={styles.profileButton}
-        onPress={() => router.push('/profile')}
-      >
-        <Text style={styles.profileButtonText}>View Profile</Text>
-      </TouchableOpacity>
+        {/* Profile button */}
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => router.push('/profile')}
+        >
+          <Text style={styles.secondaryButtonText}>View Profile</Text>
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>Sign Out</Text>
@@ -57,27 +61,33 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 32,
   },
-  placeholder: {
+  buttonsContainer: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    gap: 16,
     padding: 24,
   },
-  placeholderText: {
-    fontSize: 16,
-    color: '#999',
-    textAlign: 'center',
+  primaryButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
   },
-  profileButton: {
-    backgroundColor: '#3b82f6',
+  primaryButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    backgroundColor: '#f3f4f6',
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 16,
   },
-  profileButtonText: {
-    color: '#fff',
+  secondaryButtonText: {
+    color: '#374151',
     fontSize: 16,
     fontWeight: '600',
   },

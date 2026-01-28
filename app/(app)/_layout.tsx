@@ -26,6 +26,10 @@ export default function AppLayout() {
         name="index"
         options={{ title: 'Home' }}
       />
+      <Stack.Screen
+        name="hobbies"
+        options={{ headerShown: false }}
+      />
     </Stack>
   )
 }
