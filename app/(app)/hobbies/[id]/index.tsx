@@ -2,11 +2,16 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert, ScrollView } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useHobby, useDeleteHobby } from '@/features/hobbies'
+import { useLogs, useDeleteLog, LogHistory } from '@/features/logs'
+import { useHobbyStats, ProgressBar } from '@/features/stats'
 
 export default function HobbyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { data: hobby, isLoading, error } = useHobby(id ?? '')
+  const { data: logs, isLoading: logsLoading } = useLogs(id ?? '')
+  const { data: stats } = useHobbyStats(id ?? '')
   const deleteHobby = useDeleteHobby()
+  const deleteLog = useDeleteLog()
 
   if (isLoading) {
     return (
@@ -79,19 +84,34 @@ export default function HobbyDetailScreen() {
         </View>
       )}
 
-      {hobby.goal_total && (
+      {hobby.goal_total && stats && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Goal</Text>
-          <Text style={styles.goalText}>
-            {hobby.goal_total}
-            {hobby.tracking_type === 'time'
-              ? ' hours'
-              : hobby.goal_unit
-              ? ` ${hobby.goal_unit}`
-              : ' units'}
-          </Text>
+          <Text style={styles.sectionTitle}>Progress</Text>
+          <ProgressBar
+            progress={stats.progressPercent}
+            total={stats.goalTotal ?? 0}
+            current={stats.totalValue}
+            unit={stats.goalUnit ?? (hobby.tracking_type === 'time' ? 'minutes' : 'units')}
+            style={styles.progressBar}
+          />
         </View>
       )}
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Stats</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{stats?.logCount ?? 0}</Text>
+            <Text style={styles.statLabel}>logs</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{stats?.totalValue ?? 0}</Text>
+            <Text style={styles.statLabel}>
+              {hobby.tracking_type === 'time' ? 'minutes' : hobby.goal_unit || 'units'}
+            </Text>
+          </View>
+        </View>
+      </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Created</Text>
@@ -103,10 +123,7 @@ export default function HobbyDetailScreen() {
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.logButton}
-          onPress={() => {
-            // Placeholder - will be connected in 02-04
-            Alert.alert('Coming Soon', 'Log progress functionality will be added in the next update.')
-          }}
+          onPress={() => router.push(`/hobbies/${hobby.id}/log`)}
         >
           <Text style={styles.logButtonText}>Log Progress</Text>
         </TouchableOpacity>
@@ -127,6 +144,21 @@ export default function HobbyDetailScreen() {
             {deleteHobby.isPending ? 'Deleting...' : 'Delete'}
           </Text>
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.historySection}>
+        <Text style={styles.historyTitle}>Log History</Text>
+        {logsLoading ? (
+          <ActivityIndicator size="small" color="#007AFF" style={styles.logsLoader} />
+        ) : (
+          <LogHistory
+            logs={logs ?? []}
+            unit={hobby.tracking_type === 'time' ? 'minutes' : hobby.goal_unit || 'units'}
+            onDeleteLog={(logId) =>
+              deleteLog.mutate({ logId, hobbyId: hobby.id })
+            }
+          />
+        )}
       </View>
     </ScrollView>
   )
@@ -257,5 +289,39 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontSize: 16,
     fontWeight: '600',
+  },
+  progressBar: {
+    marginTop: 8,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 24,
+    marginTop: 8,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#007AFF',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  historySection: {
+    paddingTop: 16,
+  },
+  historyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    paddingHorizontal: 24,
+    marginBottom: 12,
+  },
+  logsLoader: {
+    marginVertical: 24,
   },
 })
