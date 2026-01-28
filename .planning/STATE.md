@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 
 ## Current Position
 
-Phase: 2 of 4 (Core Tracking) - COMPLETE
-Plan: 5 of 5 complete
-Status: Phase 2 complete, ready for Phase 3
-Last activity: 2026-01-28 — Phase 2 verification approved
+Phase: 3 of 4 (Social Graph)
+Plan: 1 of 2 complete
+Status: In progress
+Last activity: 2026-01-28 — Completed 03-01-PLAN.md
 
-Progress: [██████░░░░] 50% (2 of 4 phases complete)
+Progress: [███████░░░] 67% (9 of 13 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: ~4 min per plan
-- Total execution time: ~40 min
+- Total execution time: ~42 min
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [██████░░░░] 50% (2 of 4 phases complete)
 |-------|-------|-------|----------|
 | 1 | 3 | ~15 min | ~5 min |
 | 2 | 5 | ~25 min | ~5 min |
+| 3 | 1 | ~2 min | ~2 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01, 02-02, 02-03, 02-04, 02-05
+- Last 5 plans: 02-02, 02-03, 02-04, 02-05, 03-01
 - Trend: Consistent velocity
 
 *Updated after each plan completion*
@@ -58,6 +59,8 @@ Recent decisions affecting current work:
 - Optimistic updates with temp IDs for instant feedback (02-03)
 - Client-side stats aggregation for real-time updates via query invalidation (02-04)
 - Tab navigation with nested stacks for hobbies/profile (02-05)
+- 30-second staleTime for search results (fresher than follower lists) (03-01)
+- Optimistic isFollowing updates only (not list updates) for simpler rollback (03-01)
 
 ### Pending Todos
 
@@ -69,9 +72,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-28 (Phase 2 complete)
-Stopped at: Phase 2 verified and complete
+Last session: 2026-01-28T19:58:55Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None
 
 ---
-*Phase 2 complete. Ready for Phase 3: Social Graph (follow system, user discovery)*
+*Phase 3 in progress. Plan 03-01 complete (social service and hooks). Ready for 03-02 (social UI).*
