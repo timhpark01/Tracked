@@ -4,7 +4,7 @@ import { Link } from 'expo-router'
 export default function LoginScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Tracked</Text>
+      <Text style={styles.title}>Welcome to Gudos</Text>
       <Text style={styles.subtitle}>Track your hobbies and share your progress</Text>
 
       <Link href="/(auth)/phone" asChild>
@@ -12,6 +12,7 @@ export default function LoginScreen() {
           <Text style={styles.primaryButtonText}>Continue with Phone</Text>
         </TouchableOpacity>
       </Link>
+      <Text style={styles.phoneHint}>Sign up or sign in with your phone number</Text>
 
       <View style={styles.divider}>
         <View style={styles.dividerLine} />
@@ -63,6 +64,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  phoneHint: {
+    fontSize: 13,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 8,
   },
   divider: {
     flexDirection: 'row',

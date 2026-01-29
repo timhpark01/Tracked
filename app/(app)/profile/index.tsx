@@ -13,6 +13,8 @@ import { router } from 'expo-router'
 import { useMyProfile } from '@/features/profiles'
 import { useFollowers, useFollowing } from '@/features/social'
 import { useAuth } from '@/features/auth'
+import { useHobbies } from '@/features/hobbies'
+import { HobbyCard } from '@/features/hobbies/components/HobbyCard'
 
 export default function ProfileScreen() {
   const { user } = useAuth()
@@ -21,6 +23,9 @@ export default function ProfileScreen() {
   // Follower/following counts
   const { data: followers } = useFollowers(user?.id || '')
   const { data: following } = useFollowing(user?.id || '')
+
+  // Hobbies
+  const { data: hobbies } = useHobbies()
 
   if (isLoading) {
     return (
@@ -64,56 +69,65 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Avatar */}
-      <View style={styles.avatarSection}>
-        {profile.avatar_url ? (
-          <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarInitial}>
-              {profile.username?.[0]?.toUpperCase() || '?'}
-            </Text>
-          </View>
-        )}
-      </View>
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* Avatar */}
+        <View style={styles.avatarSection}>
+          {profile.avatar_url ? (
+            <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarInitial}>
+                {profile.username?.[0]?.toUpperCase() || '?'}
+              </Text>
+            </View>
+          )}
+        </View>
 
-      {/* Username */}
-      <Text style={styles.username}>@{profile.username}</Text>
+        {/* Username */}
+        <Text style={styles.username}>@{profile.username}</Text>
 
-      {/* Stats Row */}
-      <View style={styles.statsRow}>
-        <Pressable
-          style={styles.statItem}
-          onPress={() => router.push(`/profile/followers?userId=${user?.id}`)}
+        {/* Stats Row */}
+        <View style={styles.statsRow}>
+          <Pressable
+            style={styles.statItem}
+            onPress={() => router.push(`/profile/followers?userId=${user?.id}`)}
+          >
+            <Text style={styles.statNumber}>{followers?.length ?? 0}</Text>
+            <Text style={styles.statLabel}>Followers</Text>
+          </Pressable>
+          <Pressable
+            style={styles.statItem}
+            onPress={() => router.push(`/profile/following?userId=${user?.id}`)}
+          >
+            <Text style={styles.statNumber}>{following?.length ?? 0}</Text>
+            <Text style={styles.statLabel}>Following</Text>
+          </Pressable>
+        </View>
+
+        {/* Bio */}
+        {profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+
+        {/* Edit button */}
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => router.push('/profile/edit')}
         >
-          <Text style={styles.statNumber}>{followers?.length ?? 0}</Text>
-          <Text style={styles.statLabel}>Followers</Text>
-        </Pressable>
-        <Pressable
-          style={styles.statItem}
-          onPress={() => router.push(`/profile/following?userId=${user?.id}`)}
-        >
-          <Text style={styles.statNumber}>{following?.length ?? 0}</Text>
-          <Text style={styles.statLabel}>Following</Text>
-        </Pressable>
-      </View>
+          <Text style={styles.editButtonText}>Edit Profile</Text>
+        </TouchableOpacity>
 
-      {/* Bio */}
-      {profile.bio ? (
-        <Text style={styles.bio}>{profile.bio}</Text>
-      ) : (
-        <Text style={styles.noBio}>No bio yet</Text>
-      )}
-
-      {/* Edit button */}
-      <TouchableOpacity
-        style={styles.editButton}
-        onPress={() => router.push('/profile/edit')}
-      >
-        <Text style={styles.editButtonText}>Edit Profile</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {/* Hobbies */}
+        <View style={styles.hobbiesSection}>
+          {hobbies?.map((hobby) => (
+            <HobbyCard
+              key={hobby.id}
+              hobby={hobby}
+              onPress={() => router.push(`/hobbies/${hobby.id}`)}
+            />
+          ))}
+        </View>
+      </ScrollView>
+    </View>
   )
 }
 
@@ -123,7 +137,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   content: {
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
     alignItems: 'center',
   },
   centered: {
@@ -185,7 +200,6 @@ const styles = StyleSheet.create({
   // Profile view
   avatarSection: {
     marginBottom: 16,
-    marginTop: 24,
   },
   avatar: {
     width: 120,
@@ -216,14 +230,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#4b5563',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 0,
     lineHeight: 24,
-  },
-  noBio: {
-    fontSize: 16,
-    color: '#9ca3af',
-    fontStyle: 'italic',
-    marginBottom: 24,
   },
   editButton: {
     borderWidth: 1,
@@ -254,5 +262,10 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 14,
     color: '#6b7280',
+  },
+  // Hobbies section
+  hobbiesSection: {
+    width: '100%',
+    marginTop: 24,
   },
 })

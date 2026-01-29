@@ -46,7 +46,8 @@ export default function PhoneScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Enter Your Phone</Text>
       <Text style={styles.subtitle}>
-        We'll send you a verification code via SMS
+        We'll send you a verification code via SMS to sign in or create your
+        account
       </Text>
 
       <Controller

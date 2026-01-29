@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(npm view:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm install)",
+      "Bash(npx expo-doctor:*)",
+      "Bash(npm info:*)",
+      "Bash(npm install:*)",
+      "Bash(npx expo install:*)",
+      "Bash(grep:*)"
     ]
   }
 }
