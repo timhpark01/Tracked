@@ -81,6 +81,12 @@ export default function ProfileLayout() {
           title: 'Following',
         }}
       />
+      <Stack.Screen
+        name="hobby/[id]"
+        options={{
+          title: '',
+        }}
+      />
     </Stack>
   )
 }

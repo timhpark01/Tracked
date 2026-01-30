@@ -122,7 +122,7 @@ export default function ProfileScreen() {
             <HobbyCard
               key={hobby.id}
               hobby={hobby}
-              onPress={() => router.push(`/hobbies/${hobby.id}`)}
+              onPress={() => router.push(`/profile/hobby/${hobby.id}`)}
             />
           ))}
         </View>

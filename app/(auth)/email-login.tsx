@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -9,12 +9,20 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { Link, router } from 'expo-router'
-import { signIn } from '@/features/auth'
+import { signIn, useAuth } from '@/features/auth'
 
 export default function EmailLoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const { session } = useAuth()
+
+  // Navigate when session becomes available
+  useEffect(() => {
+    if (session) {
+      router.replace('/(app)')
+    }
+  }, [session])
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -25,10 +33,9 @@ export default function EmailLoginScreen() {
     setLoading(true)
     try {
       await signIn(email, password)
-      router.replace('/(app)')
+      // Don't navigate here - let the useEffect handle it when session updates
     } catch (error: any) {
       Alert.alert('Login Failed', error.message)
-    } finally {
       setLoading(false)
     }
   }
@@ -72,12 +79,6 @@ export default function EmailLoginScreen() {
       <Link href="/(auth)/signup" asChild>
         <TouchableOpacity style={styles.linkButton}>
           <Text style={styles.linkText}>Don't have an account? Sign up</Text>
-        </TouchableOpacity>
-      </Link>
-
-      <Link href="/(auth)/phone" asChild>
-        <TouchableOpacity style={styles.linkButton}>
-          <Text style={styles.linkText}>Use phone number instead</Text>
         </TouchableOpacity>
       </Link>
     </View>

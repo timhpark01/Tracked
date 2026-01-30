@@ -20,6 +20,27 @@ export type FeedLog = {
   }
 }
 
+export type FeedType = 'public' | 'following'
+
+const FEED_SELECT_QUERY = `
+  id,
+  value,
+  note,
+  image_urls,
+  logged_at,
+  user:profiles!hobby_logs_user_id_fkey (
+    id,
+    username,
+    avatar_url
+  ),
+  hobby:hobbies!hobby_logs_hobby_id_fkey (
+    id,
+    name,
+    tracking_type,
+    goal_unit
+  )
+`
+
 /**
  * Fetch paginated feed logs for followed users
  * RLS policy "Followers can view logs" automatically filters results
@@ -28,32 +49,47 @@ export type FeedLog = {
  * @returns Array of feed logs with nested user/hobby data
  */
 export async function getFeedLogs(start: number, end: number): Promise<FeedLog[]> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  // Get list of users the current user follows
+  const { data: following } = await supabase
+    .from('follows')
+    .select('following_id')
+    .eq('follower_id', user.id)
+
+  const followingIds = following?.map(f => f.following_id) ?? []
+
+  if (followingIds.length === 0) return []
+
   const { data, error } = await supabase
     .from('hobby_logs')
-    .select(`
-      id,
-      value,
-      note,
-      image_urls,
-      logged_at,
-      user:profiles!hobby_logs_user_id_fkey (
-        id,
-        username,
-        avatar_url
-      ),
-      hobby:hobbies!hobby_logs_hobby_id_fkey (
-        id,
-        name,
-        tracking_type,
-        goal_unit
-      )
-    `)
+    .select(FEED_SELECT_QUERY)
+    .in('user_id', followingIds)
     .order('logged_at', { ascending: false })
-    .order('id', { ascending: false }) // Fallback for stable sort
+    .order('id', { ascending: false })
     .range(start, end)
 
   if (error) throw error
 
-  // Type assertion needed due to Supabase nested type limitations
+  return (data ?? []) as unknown as FeedLog[]
+}
+
+/**
+ * Fetch paginated public feed logs (all users)
+ * @param start - Starting index (0-based, inclusive)
+ * @param end - Ending index (0-based, inclusive)
+ * @returns Array of feed logs with nested user/hobby data
+ */
+export async function getPublicFeedLogs(start: number, end: number): Promise<FeedLog[]> {
+  const { data, error } = await supabase
+    .from('hobby_logs')
+    .select(FEED_SELECT_QUERY)
+    .order('logged_at', { ascending: false })
+    .order('id', { ascending: false })
+    .range(start, end)
+
+  if (error) throw error
+
   return (data ?? []) as unknown as FeedLog[]
 }

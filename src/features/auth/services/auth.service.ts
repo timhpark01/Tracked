@@ -84,7 +84,7 @@ export async function completePhoneSignup(userId: string, username: string) {
 }
 
 /**
- * Check if username is available
+ * Check if username is available (case-insensitive)
  * @param username - Username to check
  */
 export async function checkUsernameAvailable(
@@ -93,7 +93,7 @@ export async function checkUsernameAvailable(
   const { data, error } = await supabase
     .from('profiles')
     .select('id')
-    .eq('username', username)
+    .ilike('username', username)
     .maybeSingle()
 
   if (error) throw error

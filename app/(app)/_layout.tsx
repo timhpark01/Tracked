@@ -1,5 +1,5 @@
-import { Redirect, Tabs, router } from 'expo-router'
-import { View, ActivityIndicator, StyleSheet, Pressable } from 'react-native'
+import { Redirect, Tabs } from 'expo-router'
+import { View, ActivityIndicator, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '@/features/auth'
 
@@ -59,18 +59,12 @@ export default function AppLayout() {
       <Tabs.Screen
         name="add"
         options={{
+          title: 'Log Entry',
           tabBarLabel: '',
           tabBarIcon: () => (
             <View style={styles.addButton}>
               <Ionicons name="add" size={28} color="#fff" />
             </View>
-          ),
-          tabBarButton: (props) => (
-            <Pressable
-              {...props}
-              onPress={() => router.push('/hobbies/new')}
-              style={styles.addButtonContainer}
-            />
           ),
         }}
       />
@@ -104,11 +98,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  addButtonContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   addButton: {
     width: 48,

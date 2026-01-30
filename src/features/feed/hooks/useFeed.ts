@@ -1,19 +1,23 @@
 // src/features/feed/hooks/useFeed.ts
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { getFeedLogs } from '../services/feed.service'
+import { getFeedLogs, getPublicFeedLogs, type FeedType } from '../services/feed.service'
 
 const PAGE_SIZE = 20
 
 /**
  * Hook for paginated activity feed using infinite scroll
- * Fetches logs from followed users with RLS enforcement
+ * @param feedType - 'public' for all users, 'following' for followed users only
  */
-export function useFeed() {
+export function useFeed(feedType: FeedType = 'following') {
   return useInfiniteQuery({
-    queryKey: ['feed'],
+    queryKey: ['feed', feedType],
     queryFn: async ({ pageParam = 0 }) => {
       const start = pageParam * PAGE_SIZE
       const end = start + PAGE_SIZE - 1
+
+      if (feedType === 'public') {
+        return getPublicFeedLogs(start, end)
+      }
       return getFeedLogs(start, end)
     },
     initialPageParam: 0,

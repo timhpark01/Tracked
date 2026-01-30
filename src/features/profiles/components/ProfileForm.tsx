@@ -1,9 +1,11 @@
 // src/features/profiles/components/ProfileForm.tsx
+import { useState, useEffect, useRef } from 'react'
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ControlledInput, ControlledTextArea } from '@/components/forms'
+import { checkUsernameAvailable } from '@/features/auth'
 
 const profileSchema = z.object({
   username: z
@@ -44,7 +46,12 @@ export function ProfileForm({
   isLoading = false,
   submitLabel = 'Save',
 }: ProfileFormProps) {
-  const { control, handleSubmit } = useForm<ProfileFormData>({
+  const [checkingUsername, setCheckingUsername] = useState(false)
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null)
+  const [usernameError, setUsernameError] = useState<string | null>(null)
+  const debounceRef = useRef<NodeJS.Timeout | null>(null)
+
+  const { control, handleSubmit, watch } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       username: initialData?.username ?? '',
@@ -52,15 +59,80 @@ export function ProfileForm({
     },
   })
 
+  const username = watch('username')
+  const originalUsername = initialData?.username
+
+  // Check username availability when it changes
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+    }
+
+    // Reset state
+    setUsernameError(null)
+
+    // Don't check if username is too short or same as original
+    if (username.length < 3 || username === originalUsername) {
+      setUsernameAvailable(null)
+      setCheckingUsername(false)
+      return
+    }
+
+    setCheckingUsername(true)
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const available = await checkUsernameAvailable(username)
+        setUsernameAvailable(available)
+        if (!available) {
+          setUsernameError('This username is already taken')
+        }
+      } catch {
+        setUsernameAvailable(null)
+      } finally {
+        setCheckingUsername(false)
+      }
+    }, 500)
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+      }
+    }
+  }, [username, originalUsername])
+
+  const handleFormSubmit = (data: ProfileFormData) => {
+    if (usernameAvailable === false) {
+      return // Don't submit if username is taken
+    }
+    onSubmit(data)
+  }
+
+  const isButtonDisabled = isLoading || checkingUsername || usernameAvailable === false
+
   return (
     <View style={styles.form}>
-      <ControlledInput
-        control={control}
-        name="username"
-        label="Username"
-        placeholder="Enter your username"
-        style={styles.field}
-      />
+      <View>
+        <ControlledInput
+          control={control}
+          name="username"
+          label="Username"
+          placeholder="Enter your username"
+          style={styles.field}
+        />
+        {checkingUsername && (
+          <ActivityIndicator
+            size="small"
+            color="#007AFF"
+            style={styles.checkingIndicator}
+          />
+        )}
+      </View>
+      {usernameError && (
+        <Text style={styles.errorText}>{usernameError}</Text>
+      )}
+      {username.length >= 3 && username !== originalUsername && usernameAvailable === true && (
+        <Text style={styles.successText}>Username is available</Text>
+      )}
 
       <ControlledTextArea
         control={control}
@@ -71,9 +143,9 @@ export function ProfileForm({
       />
 
       <Pressable
-        style={[styles.button, isLoading && styles.buttonDisabled]}
-        onPress={handleSubmit(onSubmit)}
-        disabled={isLoading}
+        style={[styles.button, isButtonDisabled && styles.buttonDisabled]}
+        onPress={handleSubmit(handleFormSubmit)}
+        disabled={isButtonDisabled}
       >
         {isLoading ? (
           <ActivityIndicator color="#fff" />
@@ -90,6 +162,23 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   field: {
+    marginBottom: 16,
+  },
+  checkingIndicator: {
+    position: 'absolute',
+    right: 16,
+    top: 38,
+  },
+  errorText: {
+    color: '#dc2626',
+    fontSize: 14,
+    marginTop: -12,
+    marginBottom: 16,
+  },
+  successText: {
+    color: '#16a34a',
+    fontSize: 14,
+    marginTop: -12,
     marginBottom: 16,
   },
   button: {

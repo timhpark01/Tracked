@@ -7,28 +7,15 @@ export default function LoginScreen() {
       <Text style={styles.title}>Welcome to Gudos</Text>
       <Text style={styles.subtitle}>Track your hobbies and share your progress</Text>
 
-      <Link href="/(auth)/phone" asChild>
-        <TouchableOpacity style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}>Continue with Phone</Text>
-        </TouchableOpacity>
-      </Link>
-      <Text style={styles.phoneHint}>Sign up or sign in with your phone number</Text>
-
-      <View style={styles.divider}>
-        <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>or</Text>
-        <View style={styles.dividerLine} />
-      </View>
-
       <Link href="/(auth)/email-login" asChild>
-        <TouchableOpacity style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}>Sign in with Email</Text>
+        <TouchableOpacity style={styles.primaryButton}>
+          <Text style={styles.primaryButtonText}>Sign in with Email</Text>
         </TouchableOpacity>
       </Link>
 
       <Link href="/(auth)/signup" asChild>
-        <TouchableOpacity style={styles.linkButton}>
-          <Text style={styles.linkText}>Don't have an account? Sign up with email</Text>
+        <TouchableOpacity style={styles.secondaryButton}>
+          <Text style={styles.secondaryButtonText}>Create an Account</Text>
         </TouchableOpacity>
       </Link>
     </View>
@@ -59,32 +46,12 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
+    marginBottom: 12,
   },
   primaryButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  phoneHint: {
-    fontSize: 13,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#ddd',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    color: '#666',
-    fontSize: 14,
   },
   secondaryButton: {
     backgroundColor: '#fff',
@@ -98,13 +65,5 @@ const styles = StyleSheet.create({
     color: '#333',
     fontSize: 16,
     fontWeight: '600',
-  },
-  linkButton: {
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  linkText: {
-    color: '#007AFF',
-    fontSize: 14,
   },
 })

@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { Link, router } from 'expo-router'
-import { signUp, checkUsernameAvailable } from '@/features/auth'
+import { signUp, checkUsernameAvailable, useAuth } from '@/features/auth'
 import { updateProfile } from '@/features/profiles'
 
 export default function SignupScreen() {
@@ -22,7 +22,16 @@ export default function SignupScreen() {
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(
     null
   )
+  const [pendingUsername, setPendingUsername] = useState<string | null>(null)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
+  const { session } = useAuth()
+
+  // Navigate when session becomes available and profile is set up
+  useEffect(() => {
+    if (session && !pendingUsername) {
+      router.replace('/(app)')
+    }
+  }, [session, pendingUsername])
 
   useEffect(() => {
     if (debounceRef.current) {
@@ -88,22 +97,26 @@ export default function SignupScreen() {
     }
 
     setLoading(true)
+    setPendingUsername(username)
     try {
       const result = await signUp(email, password)
       if (result.requiresConfirmation) {
+        setPendingUsername(null)
         Alert.alert(
           'Check Your Email',
           'We sent you a confirmation link. Please check your email.',
           [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
         )
+        setLoading(false)
       } else if (result.user) {
         // Update the auto-created profile with the chosen username
         await updateProfile(result.user.id, { username })
-        router.replace('/(app)')
+        setPendingUsername(null)
+        // Navigation will happen via useEffect when session updates
       }
     } catch (error: any) {
       Alert.alert('Signup Failed', error.message)
-    } finally {
+      setPendingUsername(null)
       setLoading(false)
     }
   }
