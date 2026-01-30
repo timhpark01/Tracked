@@ -7,13 +7,6 @@ import type { AppStateStatus } from 'react-native'
 import NetInfo from '@react-native-community/netinfo'
 import { QueryClient, focusManager, onlineManager } from '@tanstack/react-query'
 
-// Configure online status detection
-onlineManager.setEventListener((setOnline) => {
-  return NetInfo.addEventListener((state) => {
-    setOnline(!!state.isConnected)
-  })
-})
-
 // Configure focus detection for app state changes
 function onAppStateChange(status: AppStateStatus) {
   if (Platform.OS !== 'web') {
@@ -21,11 +14,20 @@ function onAppStateChange(status: AppStateStatus) {
   }
 }
 
-// Hook to initialize app state listener
+// Hook to initialize app state listener and online manager
 export function useAppStateRefresh() {
   useEffect(() => {
+    // Configure online status detection (inside useEffect to avoid issues in release builds)
+    const unsubscribeNetInfo = NetInfo.addEventListener((state) => {
+      onlineManager.setOnline(!!state.isConnected)
+    })
+
     const subscription = AppState.addEventListener('change', onAppStateChange)
-    return () => subscription.remove()
+
+    return () => {
+      subscription.remove()
+      unsubscribeNetInfo()
+    }
   }, [])
 }
 
