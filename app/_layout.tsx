@@ -7,7 +7,7 @@ import { queryClient, useAppStateRefresh } from '@/lib/query-client'
 import { useSupabaseAuthRefresh, isSupabaseConfigured } from '@/lib/supabase'
 
 // Debug mode - set to true to see startup info, false for production
-const DEBUG_STARTUP = true
+const DEBUG_STARTUP = __DEV__
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(() => {
