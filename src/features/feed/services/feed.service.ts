@@ -12,11 +12,9 @@ export type FeedLog = {
     username: string
     avatar_url: string | null
   }
-  hobby: {
+  activity: {
     id: string
     name: string
-    tracking_type: 'time' | 'quantity'
-    goal_unit: string | null
   }
 }
 
@@ -28,16 +26,14 @@ const FEED_SELECT_QUERY = `
   note,
   image_urls,
   logged_at,
-  user:profiles!hobby_logs_user_id_fkey (
+  user:profiles!inner (
     id,
     username,
     avatar_url
   ),
-  hobby:hobbies!hobby_logs_hobby_id_fkey (
+  activity:activities!inner (
     id,
-    name,
-    tracking_type,
-    goal_unit
+    name
   )
 `
 
@@ -46,7 +42,7 @@ const FEED_SELECT_QUERY = `
  * RLS policy "Followers can view logs" automatically filters results
  * @param start - Starting index (0-based, inclusive)
  * @param end - Ending index (0-based, inclusive)
- * @returns Array of feed logs with nested user/hobby data
+ * @returns Array of feed logs with nested user/activity data
  */
 export async function getFeedLogs(start: number, end: number): Promise<FeedLog[]> {
   const { data: { user } } = await supabase.auth.getUser()
@@ -63,7 +59,7 @@ export async function getFeedLogs(start: number, end: number): Promise<FeedLog[]
   if (followingIds.length === 0) return []
 
   const { data, error } = await supabase
-    .from('hobby_logs')
+    .from('activity_logs')
     .select(FEED_SELECT_QUERY)
     .in('user_id', followingIds)
     .order('logged_at', { ascending: false })
@@ -79,11 +75,11 @@ export async function getFeedLogs(start: number, end: number): Promise<FeedLog[]
  * Fetch paginated public feed logs (all users)
  * @param start - Starting index (0-based, inclusive)
  * @param end - Ending index (0-based, inclusive)
- * @returns Array of feed logs with nested user/hobby data
+ * @returns Array of feed logs with nested user/activity data
  */
 export async function getPublicFeedLogs(start: number, end: number): Promise<FeedLog[]> {
   const { data, error } = await supabase
-    .from('hobby_logs')
+    .from('activity_logs')
     .select(FEED_SELECT_QUERY)
     .order('logged_at', { ascending: false })
     .order('id', { ascending: false })

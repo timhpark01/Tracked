@@ -23,7 +23,7 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome to Gudos</Text>
-      <Text style={styles.subtitle}>Track your hobbies and share your progress</Text>
+      <Text style={styles.subtitle}>Track your activities and share your progress</Text>
 
       <TouchableOpacity
         style={styles.googleButton}

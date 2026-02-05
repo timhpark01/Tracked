@@ -31,16 +31,14 @@ export type Database = {
         }
         Relationships: []
       }
-      hobbies: {
+      activities: {
         Row: {
           id: string
           user_id: string
           name: string
           description: string | null
           category: string | null
-          tracking_type: 'time' | 'quantity'
           goal_total: number | null
-          goal_unit: string | null
           created_at: string
         }
         Insert: {
@@ -49,9 +47,7 @@ export type Database = {
           name: string
           description?: string | null
           category?: string | null
-          tracking_type: 'time' | 'quantity'
           goal_total?: number | null
-          goal_unit?: string | null
           created_at?: string
         }
         Update: {
@@ -60,14 +56,12 @@ export type Database = {
           name?: string
           description?: string | null
           category?: string | null
-          tracking_type?: 'time' | 'quantity'
           goal_total?: number | null
-          goal_unit?: string | null
           created_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'hobbies_user_id_fkey'
+            foreignKeyName: 'activities_user_id_fkey'
             columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'profiles'
@@ -75,10 +69,10 @@ export type Database = {
           }
         ]
       }
-      hobby_logs: {
+      activity_logs: {
         Row: {
           id: string
-          hobby_id: string
+          activity_id: string
           user_id: string
           value: number
           note: string | null
@@ -89,7 +83,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          hobby_id: string
+          activity_id: string
           user_id: string
           value: number
           note?: string | null
@@ -100,7 +94,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          hobby_id?: string
+          activity_id?: string
           user_id?: string
           value?: number
           note?: string | null
@@ -111,14 +105,14 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'hobby_logs_hobby_id_fkey'
-            columns: ['hobby_id']
+            foreignKeyName: 'activity_logs_activity_id_fkey'
+            columns: ['activity_id']
             isOneToOne: false
-            referencedRelation: 'hobbies'
+            referencedRelation: 'activities'
             referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'hobby_logs_user_id_fkey'
+            foreignKeyName: 'activity_logs_user_id_fkey'
             columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'profiles'
@@ -158,6 +152,91 @@ export type Database = {
             columns: ['following_id']
             isOneToOne: false
             referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      reactions: {
+        Row: {
+          id: string
+          activity_log_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          activity_log_id: string
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          activity_log_id?: string
+          user_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'reactions_activity_log_id_fkey'
+            columns: ['activity_log_id']
+            isOneToOne: false
+            referencedRelation: 'activity_logs'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'reactions_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      comments: {
+        Row: {
+          id: string
+          activity_log_id: string
+          user_id: string
+          parent_id: string | null
+          content: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          activity_log_id: string
+          user_id: string
+          parent_id?: string | null
+          content: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          activity_log_id?: string
+          user_id?: string
+          parent_id?: string | null
+          content?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'comments_activity_log_id_fkey'
+            columns: ['activity_log_id']
+            isOneToOne: false
+            referencedRelation: 'activity_logs'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'comments_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'comments_parent_id_fkey'
+            columns: ['parent_id']
+            isOneToOne: false
+            referencedRelation: 'comments'
             referencedColumns: ['id']
           }
         ]

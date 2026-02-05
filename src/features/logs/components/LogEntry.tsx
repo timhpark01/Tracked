@@ -2,10 +2,10 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import type { Database } from '@/types/database'
 
-type HobbyLog = Database['public']['Tables']['hobby_logs']['Row']
+type ActivityLog = Database['public']['Tables']['activity_logs']['Row']
 
 interface LogEntryProps {
-  log: HobbyLog
+  log: ActivityLog
   unit?: string
   onDelete?: () => void
 }

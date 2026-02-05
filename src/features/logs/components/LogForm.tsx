@@ -22,13 +22,11 @@ const logSchema = z.object({
 type LogFormData = z.infer<typeof logSchema>
 
 interface LogFormProps {
-  trackingType: 'time' | 'quantity'
-  goalUnit?: string | null
   onSubmit: (data: { value: number; note?: string; photoUri?: string }) => void
   isLoading?: boolean
 }
 
-export function LogForm({ trackingType, goalUnit, onSubmit, isLoading = false }: LogFormProps) {
+export function LogForm({ onSubmit, isLoading = false }: LogFormProps) {
   const [photoUri, setPhotoUri] = useState<string | null>(null)
 
   const { control, handleSubmit } = useForm<LogFormData>({
@@ -63,9 +61,7 @@ export function LogForm({ trackingType, goalUnit, onSubmit, isLoading = false }:
     })
   })
 
-  const valueLabel = trackingType === 'time'
-    ? 'Minutes'
-    : goalUnit || 'Units'
+  const valueLabel = 'Minutes'
 
   return (
     <View style={styles.container}>

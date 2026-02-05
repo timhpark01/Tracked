@@ -3,10 +3,10 @@ import { FlatList, View, Text, StyleSheet } from 'react-native'
 import type { Database } from '@/types/database'
 import { LogEntry } from './LogEntry'
 
-type HobbyLog = Database['public']['Tables']['hobby_logs']['Row']
+type ActivityLog = Database['public']['Tables']['activity_logs']['Row']
 
 interface LogHistoryProps {
-  logs: HobbyLog[]
+  logs: ActivityLog[]
   unit?: string
   onDeleteLog: (logId: string) => void
 }

@@ -1,7 +1,8 @@
-import { Redirect, Tabs } from 'expo-router'
+// app/(app)/_layout.tsx
+import { Redirect, Stack } from 'expo-router'
 import { View, ActivityIndicator, StyleSheet } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '@/features/auth'
+import { LogModalProvider } from '@/features/logs'
 
 export default function AppLayout() {
   const { session, loading } = useAuth()
@@ -20,76 +21,25 @@ export default function AppLayout() {
     return <Redirect href="/(auth)/login" />
   }
 
-  // Render tab navigation
+  // Render stack navigation with log modal provider
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: '#007AFF',
-        headerShown: true,
-        headerShadowVisible: false,
-        headerTitle: '',
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
-          ),
+    <LogModalProvider>
+      <Stack
+        initialRouteName="(tabs)"
+        screenOptions={{
+          headerShown: false,
         }}
-      />
-      <Tabs.Screen
-        name="hobbies"
-        options={{
-          href: null, // Hide from tab bar but keep routes accessible
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: 'Search',
-          tabBarLabel: 'Search',
-          headerShown: false, // Stack handles its own header
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="add"
-        options={{
-          title: 'Log Entry',
-          tabBarLabel: '',
-          tabBarIcon: () => (
-            <View style={styles.addButton}>
-              <Ionicons name="add" size={28} color="#fff" />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="inbox"
-        options={{
-          title: 'Inbox',
-          tabBarLabel: 'Inbox',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="mail-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarLabel: 'Profile',
-          headerShown: false, // Stack handles its own header
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="comments"
+          options={{
+            headerShown: false,
+            presentation: 'card',
+          }}
+        />
+      </Stack>
+    </LogModalProvider>
   )
 }
 
@@ -99,14 +49,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
-  },
-  addButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#007AFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
   },
 })

@@ -1,3 +1,3 @@
 // src/features/stats/index.ts
-export { useHobbyStats, type HobbyStats } from './hooks/useHobbyStats'
+export { useActivityStats, type ActivityStats } from './hooks/useActivityStats'
 export { ProgressBar } from './components/ProgressBar'

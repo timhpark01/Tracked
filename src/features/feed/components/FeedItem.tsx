@@ -1,6 +1,10 @@
 // src/features/feed/components/FeedItem.tsx
 import React, { memo } from 'react'
-import { View, Text, Image, StyleSheet } from 'react-native'
+import { View, Text, Image, StyleSheet, Pressable } from 'react-native'
+import { router } from 'expo-router'
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import { useReactions, useToggleReaction } from '@/features/reactions'
+import { useCommentCount } from '@/features/comments'
 import type { FeedLog } from '../services/feed.service'
 
 interface FeedItemProps {
@@ -27,26 +31,38 @@ function formatRelativeTime(dateString: string): string {
   })
 }
 
-function formatValue(value: number, trackingType: 'time' | 'quantity', unit: string | null): string {
-  if (trackingType === 'time') {
-    // Value is in minutes for time tracking
-    if (value >= 60) {
-      const hours = Math.floor(value / 60)
-      const mins = value % 60
-      return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
-    }
-    return `${value} min`
+function formatValue(value: number): string {
+  // Value is in minutes
+  if (value >= 60) {
+    const hours = Math.floor(value / 60)
+    const mins = value % 60
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
   }
-  return `${value} ${unit || 'units'}`
+  return `${value} min`
 }
 
 function FeedItemComponent({ log }: FeedItemProps) {
-  const { user, hobby } = log
+  const { user, activity } = log
   const avatarUri = user.avatar_url || undefined
-  const displayValue = formatValue(log.value, hobby.tracking_type, hobby.goal_unit)
+  const displayValue = formatValue(log.value)
+
+  // Reactions (Gudos)
+  const { data: reactionInfo } = useReactions(log.id)
+  const toggleReaction = useToggleReaction()
+
+  // Comments
+  const { data: commentCount } = useCommentCount(log.id)
+
+  const handleGudoPress = () => {
+    toggleReaction.mutate(log.id)
+  }
+
+  const handleCommentPress = () => {
+    router.push(`/comments/${log.id}`)
+  }
 
   return (
-    <View style={styles.container}>
+    <Pressable style={styles.container} onPress={handleCommentPress}>
       {/* User Row */}
       <View style={styles.userRow}>
         <View style={styles.avatarContainer}>
@@ -66,9 +82,9 @@ function FeedItemComponent({ log }: FeedItemProps) {
         </View>
       </View>
 
-      {/* Hobby & Value */}
+      {/* Activity & Value */}
       <View style={styles.contentRow}>
-        <Text style={styles.hobbyName}>{hobby.name}</Text>
+        <Text style={styles.activityName}>{activity.name}</Text>
         <Text style={styles.value}>{displayValue}</Text>
       </View>
 
@@ -85,7 +101,33 @@ function FeedItemComponent({ log }: FeedItemProps) {
           <Image source={{ uri: log.image_urls[0] }} style={styles.image} />
         </View>
       )}
-    </View>
+
+      {/* Action Bar */}
+      <View style={styles.actionBar}>
+        <Pressable
+          style={styles.actionButton}
+          onPress={(e) => {
+            e.stopPropagation()
+            handleGudoPress()
+          }}
+          disabled={toggleReaction.isPending}
+        >
+          <MaterialCommunityIcons
+            name="hand-clap"
+            size={22}
+            color={reactionInfo?.hasReacted ? '#007AFF' : '#6b7280'}
+          />
+          <Text style={[styles.actionCount, reactionInfo?.hasReacted && styles.actionCountActive]}>
+            {reactionInfo?.count ?? 0}
+          </Text>
+        </Pressable>
+
+        <View style={styles.actionButton}>
+          <Ionicons name="chatbubble-outline" size={20} color="#6b7280" />
+          <Text style={styles.actionCount}>{commentCount ?? 0}</Text>
+        </View>
+      </View>
+    </Pressable>
   )
 }
 
@@ -150,7 +192,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  hobbyName: {
+  activityName: {
     fontSize: 16,
     fontWeight: '500',
     color: '#374151',
@@ -174,5 +216,26 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 8,
     backgroundColor: '#f3f4f6',
+  },
+  actionBar: {
+    flexDirection: 'row',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
+    gap: 24,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  actionCount: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  actionCountActive: {
+    color: '#007AFF',
   },
 })

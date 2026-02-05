@@ -4,7 +4,7 @@ import { deleteLog } from '../services/logs.service'
 
 interface DeleteLogInput {
   logId: string
-  hobbyId: string
+  activityId: string
 }
 
 export function useDeleteLog() {
@@ -15,8 +15,8 @@ export function useDeleteLog() {
       await deleteLog(input.logId)
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['logs', variables.hobbyId] })
-      queryClient.invalidateQueries({ queryKey: ['hobby-stats', variables.hobbyId] })
+      queryClient.invalidateQueries({ queryKey: ['logs', variables.activityId] })
+      queryClient.invalidateQueries({ queryKey: ['activity-stats', variables.activityId] })
     },
   })
 }

@@ -2,23 +2,23 @@
 import { supabase } from '@/lib/supabase'
 import type { Database } from '@/types/database'
 
-type HobbyLog = Database['public']['Tables']['hobby_logs']['Row']
-type HobbyLogInsert = Database['public']['Tables']['hobby_logs']['Insert']
+type ActivityLog = Database['public']['Tables']['activity_logs']['Row']
+type ActivityLogInsert = Database['public']['Tables']['activity_logs']['Insert']
 
-export async function getLogs(hobbyId: string): Promise<HobbyLog[]> {
+export async function getLogs(activityId: string): Promise<ActivityLog[]> {
   const { data, error } = await supabase
-    .from('hobby_logs')
+    .from('activity_logs')
     .select('*')
-    .eq('hobby_id', hobbyId)
+    .eq('activity_id', activityId)
     .order('logged_at', { ascending: false })
 
   if (error) throw error
   return data
 }
 
-export async function createLog(log: HobbyLogInsert): Promise<HobbyLog> {
+export async function createLog(log: ActivityLogInsert): Promise<ActivityLog> {
   const { data, error } = await supabase
-    .from('hobby_logs')
+    .from('activity_logs')
     .insert(log)
     .select()
     .single()
@@ -29,7 +29,7 @@ export async function createLog(log: HobbyLogInsert): Promise<HobbyLog> {
 
 export async function deleteLog(logId: string): Promise<void> {
   const { error } = await supabase
-    .from('hobby_logs')
+    .from('activity_logs')
     .delete()
     .eq('id', logId)
 
