@@ -5,6 +5,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient, useAppStateRefresh } from '@/lib/query-client'
 import { useSupabaseAuthRefresh } from '@/lib/supabase'
+import * as WebBrowser from 'expo-web-browser'
+
+// Complete any pending auth sessions - MUST be at app entry point
+WebBrowser.maybeCompleteAuthSession()
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(() => {
