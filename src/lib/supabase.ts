@@ -1,9 +1,9 @@
 // src/lib/supabase.ts
 import 'react-native-url-polyfill/auto'
 import { useEffect } from 'react'
-import { AppState, Platform, Alert } from 'react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { AppState, Platform } from 'react-native'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { Database } from '@/types/database'
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL
@@ -12,35 +12,25 @@ const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
 // Flag to track if Supabase is properly configured
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey)
 
-// Create client only if configured, otherwise create a dummy that will fail gracefully
-export const supabase: SupabaseClient<Database> = isSupabaseConfigured
-  ? createClient<Database>(supabaseUrl!, supabaseAnonKey!, {
-      auth: {
-        ...(Platform.OS !== 'web' ? { storage: AsyncStorage } : {}),
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false,
-      },
-    })
-  : createClient<Database>('https://placeholder.supabase.co', 'placeholder', {
-      auth: {
-        ...(Platform.OS !== 'web' ? { storage: AsyncStorage } : {}),
-        autoRefreshToken: false,
-        persistSession: false,
-        detectSessionInUrl: false,
-      },
-    })
-
-// Show alert if not configured (only in production builds)
-if (!isSupabaseConfigured && !__DEV__) {
-  setTimeout(() => {
-    Alert.alert(
-      'Configuration Error',
-      'The app is not properly configured. Please contact support.',
-      [{ text: 'OK' }]
-    )
-  }, 1000)
+// Log configuration status (helpful for debugging TestFlight issues)
+if (!isSupabaseConfigured) {
+  console.warn('[Supabase] Not configured - URL:', !!supabaseUrl, 'Key:', !!supabaseAnonKey)
 }
+
+// Create the Supabase client - use real config or placeholder
+// The placeholder allows the app to load without crashing when unconfigured
+export const supabase: SupabaseClient<Database> = createClient<Database>(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      ...(Platform.OS !== 'web' ? { storage: AsyncStorage } : {}),
+      autoRefreshToken: isSupabaseConfigured,
+      persistSession: isSupabaseConfigured,
+      detectSessionInUrl: false,
+    },
+  }
+)
 
 // Hook to handle auth refresh on app state changes (React Native only)
 export function useSupabaseAuthRefresh() {
