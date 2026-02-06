@@ -1,4 +1,4 @@
-// app/(app)/profile/[userId].tsx
+// app/(app)/user/[userId].tsx
 import {
   View,
   Text,
@@ -90,14 +90,14 @@ export default function UserProfileScreen() {
       <View style={styles.statsRow}>
         <Pressable
           style={styles.statItem}
-          onPress={() => router.push(`/profile/followers?userId=${userId}`)}
+          onPress={() => router.push(`/followers/${userId}`)}
         >
           <Text style={styles.statNumber}>{followers?.length ?? 0}</Text>
           <Text style={styles.statLabel}>Followers</Text>
         </Pressable>
         <Pressable
           style={styles.statItem}
-          onPress={() => router.push(`/profile/following?userId=${userId}`)}
+          onPress={() => router.push(`/following/${userId}`)}
         >
           <Text style={styles.statNumber}>{following?.length ?? 0}</Text>
           <Text style={styles.statLabel}>Following</Text>

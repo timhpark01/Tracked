@@ -38,6 +38,27 @@ export default function AppLayout() {
             presentation: 'card',
           }}
         />
+        <Stack.Screen
+          name="user"
+          options={{
+            headerShown: false,
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="followers"
+          options={{
+            headerShown: false,
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="following"
+          options={{
+            headerShown: false,
+            presentation: 'card',
+          }}
+        />
       </Stack>
     </LogModalProvider>
   )

@@ -1,10 +1,9 @@
-import { useState, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
-  ScrollView,
   Dimensions,
   Animated,
 } from 'react-native'
@@ -15,28 +14,15 @@ const TABS = ['Discover', 'Following'] as const
 
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState(0)
-  const scrollViewRef = useRef<ScrollView>(null)
-  const indicatorPosition = useRef(new Animated.Value(0)).current
+  const [indicatorPosition] = useState(() => new Animated.Value(0))
 
-  const handleTabPress = (index: number) => {
+  const handleTabPress = useCallback((index: number) => {
     setActiveTab(index)
-    scrollViewRef.current?.scrollTo({ x: index * SCREEN_WIDTH, animated: true })
     Animated.spring(indicatorPosition, {
       toValue: index,
       useNativeDriver: true,
     }).start()
-  }
-
-  const handleScroll = (event: any) => {
-    const scrollX = event.nativeEvent.contentOffset.x
-    const newIndex = Math.round(scrollX / SCREEN_WIDTH)
-    if (newIndex !== activeTab && newIndex >= 0 && newIndex < TABS.length) {
-      setActiveTab(newIndex)
-    }
-    // Animate indicator based on scroll position
-    const position = scrollX / SCREEN_WIDTH
-    indicatorPosition.setValue(position)
-  }
+  }, [indicatorPosition])
 
   const indicatorTranslateX = indicatorPosition.interpolate({
     inputRange: [0, 1],
@@ -73,22 +59,10 @@ export default function HomeScreen() {
         />
       </View>
 
-      {/* Swipable Content */}
-      <ScrollView
-        ref={scrollViewRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-      >
-        <View style={styles.page}>
-          <FeedList feedType="public" />
-        </View>
-        <View style={styles.page}>
-          <FeedList feedType="following" />
-        </View>
-      </ScrollView>
+      {/* Tab Content - Only active tab is rendered */}
+      <View style={styles.content}>
+        <FeedList feedType={activeTab === 0 ? 'public' : 'following'} key={activeTab} />
+      </View>
     </View>
   )
 }
@@ -127,8 +101,7 @@ const styles = StyleSheet.create({
     height: 2,
     backgroundColor: '#007AFF',
   },
-  page: {
-    width: SCREEN_WIDTH,
+  content: {
     flex: 1,
   },
 })

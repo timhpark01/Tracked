@@ -15,14 +15,15 @@ export default function EmailLoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const { session } = useAuth()
+  const { session, loading: authLoading } = useAuth()
 
-  // Navigate when session becomes available
+  // Navigate when session is available AND auth is not loading
+  // This ensures the auth state is fully stabilized before navigation
   useEffect(() => {
-    if (session) {
+    if (session && !authLoading) {
       router.replace('/(app)')
     }
-  }, [session])
+  }, [session, authLoading])
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -33,7 +34,7 @@ export default function EmailLoginScreen() {
     setLoading(true)
     try {
       await signIn(email, password)
-      // Don't navigate here - let the useEffect handle it when session updates
+      // Keep loading true - navigation will happen via useEffect when session updates
     } catch (error: any) {
       Alert.alert('Login Failed', error.message)
       setLoading(false)

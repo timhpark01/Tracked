@@ -91,14 +91,14 @@ export default function ProfileScreen() {
         <View style={styles.statsRow}>
           <Pressable
             style={styles.statItem}
-            onPress={() => router.push(`/profile/followers?userId=${user?.id}`)}
+            onPress={() => router.push(`/followers/${user?.id}`)}
           >
             <Text style={styles.statNumber}>{followers?.length ?? 0}</Text>
             <Text style={styles.statLabel}>Followers</Text>
           </Pressable>
           <Pressable
             style={styles.statItem}
-            onPress={() => router.push(`/profile/following?userId=${user?.id}`)}
+            onPress={() => router.push(`/following/${user?.id}`)}
           >
             <Text style={styles.statNumber}>{following?.length ?? 0}</Text>
             <Text style={styles.statLabel}>Following</Text>

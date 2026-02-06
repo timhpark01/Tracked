@@ -1,5 +1,5 @@
 // src/features/feed/components/FeedList.tsx
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useMemo } from 'react'
 import {
   FlatList,
   View,
@@ -10,6 +10,8 @@ import {
 import { useFeed } from '../hooks/useFeed'
 import { FeedItem } from './FeedItem'
 import { FeedEmpty } from './FeedEmpty'
+import { useReactionsBatch } from '@/features/reactions'
+import { useCommentCountBatch } from '@/features/comments'
 import type { FeedLog, FeedType } from '../services/feed.service'
 
 interface FeedListProps {
@@ -31,12 +33,31 @@ export function FeedList({ feedType = 'following' }: FeedListProps) {
   const onEndReachedCalledDuringMomentum = useRef(false)
 
   // Flatten all pages into single array
-  const feedItems = data?.pages.flatMap((page) => page) ?? []
+  const feedItems = useMemo(
+    () => data?.pages.flatMap((page) => page) ?? [],
+    [data?.pages]
+  )
+
+  // Extract log IDs for batch queries
+  const logIds = useMemo(
+    () => feedItems.map((item) => item.id),
+    [feedItems]
+  )
+
+  // Batch fetch reactions and comments for all visible items
+  const { data: reactionsMap } = useReactionsBatch(logIds)
+  const { data: commentCountsMap } = useCommentCountBatch(logIds)
 
   // Memoized renderItem to prevent unnecessary re-renders
   const renderItem = useCallback(
-    ({ item }: { item: FeedLog }) => <FeedItem log={item} />,
-    []
+    ({ item }: { item: FeedLog }) => (
+      <FeedItem
+        log={item}
+        reactionInfo={reactionsMap?.[item.id]}
+        commentCount={commentCountsMap?.[item.id]}
+      />
+    ),
+    [reactionsMap, commentCountsMap]
   )
 
   // Memoized keyExtractor for performance

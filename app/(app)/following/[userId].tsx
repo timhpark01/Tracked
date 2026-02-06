@@ -1,4 +1,4 @@
-// app/(app)/profile/following.tsx
+// app/(app)/following/[userId].tsx
 import {
   View,
   Text,
@@ -42,7 +42,7 @@ export default function FollowingScreen() {
   const renderUser = ({ item: user }: { item: FollowingUser }) => (
     <Pressable
       style={styles.userItem}
-      onPress={() => router.push(`/profile/${user.id}`)}
+      onPress={() => router.push(`/user/${user.id}`)}
     >
       {user.avatar_url ? (
         <Image source={{ uri: user.avatar_url }} style={styles.avatar} />

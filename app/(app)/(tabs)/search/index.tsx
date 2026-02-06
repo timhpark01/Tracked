@@ -36,7 +36,7 @@ export default function SearchScreen() {
   const renderUser = ({ item }: { item: Profile }) => (
     <Pressable
       style={styles.userItem}
-      onPress={() => router.push(`/profile/${item.id}`)}
+      onPress={() => router.push(`/user/${item.id}`)}
     >
       {item.avatar_url ? (
         <Image source={{ uri: item.avatar_url }} style={styles.avatar} />

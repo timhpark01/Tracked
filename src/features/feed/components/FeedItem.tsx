@@ -3,12 +3,14 @@ import React, { memo } from 'react'
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
-import { useReactions, useToggleReaction } from '@/features/reactions'
-import { useCommentCount } from '@/features/comments'
+import { useToggleReaction, type ReactionInfo } from '@/features/reactions'
 import type { FeedLog } from '../services/feed.service'
 
 interface FeedItemProps {
   log: FeedLog
+  // Optional pre-fetched data from batch queries (for performance)
+  reactionInfo?: ReactionInfo
+  commentCount?: number
 }
 
 function formatRelativeTime(dateString: string): string {
@@ -41,17 +43,13 @@ function formatValue(value: number): string {
   return `${value} min`
 }
 
-function FeedItemComponent({ log }: FeedItemProps) {
+function FeedItemComponent({ log, reactionInfo, commentCount }: FeedItemProps) {
   const { user, activity } = log
   const avatarUri = user.avatar_url || undefined
   const displayValue = formatValue(log.value)
 
-  // Reactions (Gudos)
-  const { data: reactionInfo } = useReactions(log.id)
+  // Reactions mutation
   const toggleReaction = useToggleReaction()
-
-  // Comments
-  const { data: commentCount } = useCommentCount(log.id)
 
   const handleGudoPress = () => {
     toggleReaction.mutate(log.id)
@@ -131,7 +129,22 @@ function FeedItemComponent({ log }: FeedItemProps) {
   )
 }
 
-export const FeedItem = memo(FeedItemComponent)
+// Custom comparison to prevent re-renders when only reaction/comment counts change slightly
+export const FeedItem = memo(FeedItemComponent, (prevProps, nextProps) => {
+  // Always re-render if the log itself changed
+  if (prevProps.log.id !== nextProps.log.id) return false
+  if (prevProps.log.note !== nextProps.log.note) return false
+  if (prevProps.log.value !== nextProps.log.value) return false
+
+  // Re-render if reaction state changed
+  if (prevProps.reactionInfo?.hasReacted !== nextProps.reactionInfo?.hasReacted) return false
+  if (prevProps.reactionInfo?.count !== nextProps.reactionInfo?.count) return false
+
+  // Re-render if comment count changed
+  if (prevProps.commentCount !== nextProps.commentCount) return false
+
+  return true
+})
 
 const styles = StyleSheet.create({
   container: {

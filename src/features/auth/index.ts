@@ -1,5 +1,6 @@
 // src/features/auth/index.ts
 export { useAuth } from './hooks/useAuth'
+export { AuthProvider } from './context/AuthContext'
 export {
   signUp,
   signIn,

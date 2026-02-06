@@ -64,24 +64,6 @@ export default function ProfileLayout() {
         }}
       />
       <Stack.Screen
-        name="[userId]"
-        options={{
-          title: 'Profile',
-        }}
-      />
-      <Stack.Screen
-        name="followers"
-        options={{
-          title: 'Followers',
-        }}
-      />
-      <Stack.Screen
-        name="following"
-        options={{
-          title: 'Following',
-        }}
-      />
-      <Stack.Screen
         name="activity/[id]"
         options={{
           title: '',
