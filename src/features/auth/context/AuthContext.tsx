@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null
   loading: boolean
   needsProfileSetup: boolean
+  refreshSession: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -33,29 +34,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // so React Query automatically treats different users as different queries
   }, [])
 
-  useEffect(() => {
-    mounted.current = true
+  // Check profile for a given user
+  const checkProfile = useCallback(async (userId: string) => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', userId)
+        .maybeSingle()
 
-    const checkProfile = async (userId: string) => {
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('id', userId)
-          .maybeSingle()
-
-        if (mounted.current) {
-          setNeedsProfileSetup(!profile || !profile.username)
-        }
-      } catch (error) {
-        console.warn('[Auth] Profile check failed:', error)
-        if (mounted.current) {
-          // On error, assume profile exists to avoid blocking login
-          // The app will handle missing profile gracefully
-          setNeedsProfileSetup(false)
-        }
+      if (mounted.current) {
+        setNeedsProfileSetup(!profile || !profile.username)
+      }
+    } catch (error) {
+      console.warn('[Auth] Profile check failed:', error)
+      if (mounted.current) {
+        // On error, assume profile exists to avoid blocking login
+        // The app will handle missing profile gracefully
+        setNeedsProfileSetup(false)
       }
     }
+  }, [])
+
+  // Force refresh session from Supabase - call this after OAuth login
+  // to ensure AuthContext state is updated even if onAuthStateChange doesn't fire
+  const refreshSession = useCallback(async () => {
+    console.log('[Auth] Forcing session refresh...')
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
+
+      if (!mounted.current) return
+
+      const newUser = currentSession?.user ?? null
+      console.log('[Auth] Refresh got session:', !!currentSession, 'user:', newUser?.id?.slice(0, 8))
+
+      setSession(currentSession)
+      setUser(newUser)
+
+      if (newUser) {
+        await checkProfile(newUser.id)
+        trackUserChange(newUser.id)
+      } else {
+        setNeedsProfileSetup(false)
+        trackUserChange(null)
+      }
+
+      setLoading(false)
+    } catch (error) {
+      console.warn('[Auth] Session refresh failed:', error)
+      if (mounted.current) {
+        setLoading(false)
+      }
+    }
+  }, [checkProfile, trackUserChange])
+
+  useEffect(() => {
+    mounted.current = true
 
     const initSession = async () => {
       try {
@@ -126,10 +160,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mounted.current = false
       subscription.unsubscribe()
     }
-  }, [trackUserChange])
+  }, [trackUserChange, checkProfile])
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, needsProfileSetup }}>
+    <AuthContext.Provider value={{ session, user, loading, needsProfileSetup, refreshSession }}>
       {children}
     </AuthContext.Provider>
   )
