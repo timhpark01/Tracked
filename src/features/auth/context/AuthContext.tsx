@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from 'react'
 import { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { queryClient } from '@/lib/query-client'
 
 interface AuthContextType {
   session: Session | null
@@ -9,6 +10,7 @@ interface AuthContextType {
   loading: boolean
   needsProfileSetup: boolean
   refreshSession: () => Promise<void>
+  signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -61,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshSession = useCallback(async () => {
     console.log('[Auth] Forcing session refresh...')
     try {
+      // First, get the session from storage/memory
       const { data: { session: currentSession } } = await supabase.auth.getSession()
 
       if (!mounted.current) return
@@ -68,13 +71,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const newUser = currentSession?.user ?? null
       console.log('[Auth] Refresh got session:', !!currentSession, 'user:', newUser?.id?.slice(0, 8))
 
-      setSession(currentSession)
-      setUser(newUser)
+      // If we have a session, verify it works by calling getUser()
+      // This ensures the Supabase client is properly initialized
+      if (currentSession) {
+        console.log('[Auth] Verifying session with getUser()...')
+        const { data: { user: verifiedUser }, error: userError } = await supabase.auth.getUser()
 
-      if (newUser) {
-        await checkProfile(newUser.id)
-        trackUserChange(newUser.id)
+        if (userError) {
+          console.warn('[Auth] getUser() failed:', userError.message)
+          // Session might be invalid, try to refresh it
+          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+          if (refreshError || !refreshedSession) {
+            console.warn('[Auth] Session refresh failed, clearing session')
+            setSession(null)
+            setUser(null)
+            setNeedsProfileSetup(false)
+            setLoading(false)
+            return
+          }
+          // Use the refreshed session
+          setSession(refreshedSession)
+          setUser(refreshedSession.user)
+          if (refreshedSession.user) {
+            await checkProfile(refreshedSession.user.id)
+            trackUserChange(refreshedSession.user.id)
+          }
+        } else {
+          console.log('[Auth] Session verified, user:', verifiedUser?.id?.slice(0, 8))
+          setSession(currentSession)
+          setUser(verifiedUser)
+          if (verifiedUser) {
+            await checkProfile(verifiedUser.id)
+            trackUserChange(verifiedUser.id)
+          }
+        }
+
+        // Invalidate all queries to force refetch with new auth state
+        console.log('[Auth] Invalidating all queries...')
+        await queryClient.invalidateQueries()
       } else {
+        setSession(null)
+        setUser(null)
         setNeedsProfileSetup(false)
         trackUserChange(null)
       }
@@ -87,6 +124,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [checkProfile, trackUserChange])
+
+  // Sign out and clear all state
+  const signOut = useCallback(async () => {
+    console.log('[Auth] Signing out...')
+    try {
+      // Clear React Query cache first
+      queryClient.clear()
+
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.warn('[Auth] Sign out error:', error.message)
+        // Even if signOut fails, clear local state
+      }
+
+      // Clear local state
+      if (mounted.current) {
+        setSession(null)
+        setUser(null)
+        setNeedsProfileSetup(false)
+        trackUserChange(null)
+      }
+
+      console.log('[Auth] Sign out complete')
+    } catch (error) {
+      console.warn('[Auth] Sign out exception:', error)
+      // Still clear local state on error
+      if (mounted.current) {
+        setSession(null)
+        setUser(null)
+        setNeedsProfileSetup(false)
+      }
+      throw error
+    }
+  }, [trackUserChange])
 
   useEffect(() => {
     mounted.current = true
@@ -163,7 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [trackUserChange, checkProfile])
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, needsProfileSetup, refreshSession }}>
+    <AuthContext.Provider value={{ session, user, loading, needsProfileSetup, refreshSession, signOut }}>
       {children}
     </AuthContext.Provider>
   )

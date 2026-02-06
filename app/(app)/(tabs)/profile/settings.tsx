@@ -1,9 +1,11 @@
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { signOut } from '@/features/auth'
+import { useAuth } from '@/features/auth'
 
 export default function SettingsScreen() {
+  const { signOut } = useAuth()
+
   const handleLogout = () => {
     Alert.alert('Log Out', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },

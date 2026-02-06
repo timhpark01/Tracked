@@ -203,8 +203,17 @@ export async function signInWithGoogle() {
         throw sessionError
       }
 
-      console.log('[Auth] PKCE session set successfully!')
-      return { session: sessionData.session, user: sessionData.user }
+      console.log('[Auth] PKCE session set, verifying...')
+
+      // Verify the session is actually working
+      const { data: { user: verifiedUser }, error: verifyError } = await supabase.auth.getUser()
+      if (verifyError || !verifiedUser) {
+        console.log('[Auth] Session verification failed:', verifyError?.message)
+        throw new Error('Session verification failed after PKCE exchange')
+      }
+
+      console.log('[Auth] PKCE session verified successfully!')
+      return { session: sessionData.session, user: verifiedUser }
     }
 
     if (accessToken) {
@@ -221,8 +230,17 @@ export async function signInWithGoogle() {
         throw sessionError
       }
 
-      console.log('[Auth] Session set successfully!')
-      return { session: sessionData.session, user: sessionData.user }
+      console.log('[Auth] Session set, verifying...')
+
+      // Verify the session is actually working
+      const { data: { user: verifiedUser }, error: verifyError } = await supabase.auth.getUser()
+      if (verifyError || !verifiedUser) {
+        console.log('[Auth] Session verification failed:', verifyError?.message)
+        throw new Error('Session verification failed after setSession')
+      }
+
+      console.log('[Auth] Session verified successfully!')
+      return { session: sessionData.session, user: verifiedUser }
     } else {
       console.log('[Auth] No access token found in callback URL')
       throw new Error('No access token in callback')
