@@ -20,11 +20,12 @@ export default function AuthLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="login" />
-      <Stack.Screen name="phone" />
-      <Stack.Screen name="verify-otp" />
       <Stack.Screen name="username" />
       <Stack.Screen name="email-login" />
       <Stack.Screen name="signup" />
+      {/* Phone auth screens hidden for now */}
+      {/* <Stack.Screen name="phone" /> */}
+      {/* <Stack.Screen name="verify-otp" /> */}
     </Stack>
   )
 }
