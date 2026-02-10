@@ -24,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [needsProfileSetup, setNeedsProfileSetup] = useState(false)
   const mounted = useRef(true)
   const previousUserId = useRef<string | null>(null)
+  const isSigningOut = useRef(false)
 
   // Track user changes for logging
   const trackUserChange = useCallback((newUserId: string | null) => {
@@ -62,6 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // to ensure AuthContext state is updated even if onAuthStateChange doesn't fire
   const refreshSession = useCallback(async () => {
     console.log('[Auth] Forcing session refresh...')
+    // Clear signing out flag since we're explicitly refreshing (e.g., after login)
+    isSigningOut.current = false
+
     try {
       // First, get the session from storage/memory
       const { data: { session: currentSession } } = await supabase.auth.getSession()
@@ -128,18 +132,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign out and clear all state
   const signOut = useCallback(async () => {
     console.log('[Auth] Signing out...')
+    // Set flag to ignore any SIGNED_IN events that fire during/after signOut
+    isSigningOut.current = true
+
     try {
       // Clear React Query cache first
       queryClient.clear()
 
-      // Sign out from Supabase
-      const { error } = await supabase.auth.signOut()
+      // Sign out from Supabase with timeout to prevent hanging
+      const signOutPromise = supabase.auth.signOut()
+      const timeoutPromise = new Promise<{ error: Error }>((resolve) =>
+        setTimeout(() => resolve({ error: new Error('Sign out timeout') }), 5000)
+      )
+
+      const { error } = await Promise.race([signOutPromise, timeoutPromise])
       if (error) {
         console.warn('[Auth] Sign out error:', error.message)
         // Even if signOut fails, clear local state
       }
 
-      // Clear local state
+      // Clear local state regardless of Supabase result
       if (mounted.current) {
         setSession(null)
         setUser(null)
@@ -155,8 +167,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null)
         setUser(null)
         setNeedsProfileSetup(false)
+        trackUserChange(null)
       }
-      throw error
+      // Don't throw - we want logout to succeed even if Supabase fails
     }
   }, [trackUserChange])
 
@@ -204,6 +217,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       console.log('[Auth] State change:', event, 'hasSession:', !!newSession, 'userId:', newSession?.user?.id?.slice(0, 8))
       if (!mounted.current) return
+
+      // Ignore SIGNED_IN events while we're signing out - these are stale events
+      // from pending token refreshes that fire after signOut clears the session
+      if (isSigningOut.current && event === 'SIGNED_IN') {
+        console.log('[Auth] Ignoring SIGNED_IN event during sign out')
+        return
+      }
+
+      // Clear the signing out flag on SIGNED_OUT event
+      if (event === 'SIGNED_OUT') {
+        isSigningOut.current = false
+      }
 
       const newUser = newSession?.user ?? null
 

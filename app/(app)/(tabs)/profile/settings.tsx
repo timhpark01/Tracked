@@ -1,5 +1,4 @@
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native'
-import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '@/features/auth'
 
@@ -15,7 +14,8 @@ export default function SettingsScreen() {
         onPress: async () => {
           try {
             await signOut()
-            router.replace('/(auth)/login')
+            // Navigation is handled automatically by (app)/_layout.tsx
+            // when session becomes null - no manual navigation needed
           } catch (error: any) {
             Alert.alert('Error', error.message || 'Failed to log out')
           }

@@ -1,16 +1,22 @@
-import { Redirect, Stack } from 'expo-router'
+import { Redirect, Stack, usePathname } from 'expo-router'
 import { useAuth } from '@/features/auth'
 
 export default function AuthLayout() {
   const { session, loading, needsProfileSetup } = useAuth()
+  const pathname = usePathname()
 
   // Show nothing while loading (prevents flash)
   if (loading) {
     return null
   }
 
+  // Allow verifying screen to show even with a session
+  // (it handles its own navigation after verification)
+  const isVerifying = pathname === '/(auth)/verifying' || pathname === '/verifying'
+
   // Redirect to app if already authenticated and profile is complete
-  if (session && !needsProfileSetup) {
+  // BUT not if we're on the verifying screen
+  if (session && !needsProfileSetup && !isVerifying) {
     return <Redirect href="/(app)" />
   }
 
@@ -20,6 +26,7 @@ export default function AuthLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="login" />
+      <Stack.Screen name="verifying" />
       <Stack.Screen name="username" />
       <Stack.Screen name="email-login" />
       <Stack.Screen name="signup" />
