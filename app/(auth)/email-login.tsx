@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
   View,
   Text,
@@ -8,22 +8,13 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native'
-import { Link, router } from 'expo-router'
-import { signIn, useAuth } from '@/features/auth'
+import { Link } from 'expo-router'
+import { signIn } from '@/features/auth'
 
 export default function EmailLoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const { session, loading: authLoading } = useAuth()
-
-  // Navigate when session is available AND auth is not loading
-  // This ensures the auth state is fully stabilized before navigation
-  useEffect(() => {
-    if (session && !authLoading) {
-      router.replace('/(app)')
-    }
-  }, [session, authLoading])
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -34,7 +25,8 @@ export default function EmailLoginScreen() {
     setLoading(true)
     try {
       await signIn(email, password)
-      // Keep loading true - navigation will happen via useEffect when session updates
+      // Navigation is handled automatically by (auth)/_layout.tsx
+      // when session becomes available - no manual navigation needed
     } catch (error: any) {
       Alert.alert('Login Failed', error.message)
       setLoading(false)

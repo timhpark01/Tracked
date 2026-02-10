@@ -10,29 +10,24 @@ export default function AuthLayout() {
     return null
   }
 
-  // Allow verifying screen to show even with a session
-  // (it handles its own navigation after verification)
-  const isVerifying = pathname === '/(auth)/verifying' || pathname === '/verifying'
-
-  // Redirect to app if already authenticated and profile is complete
-  // BUT not if we're on the verifying screen
-  if (session && !needsProfileSetup && !isVerifying) {
+  // If authenticated with complete profile, redirect to app
+  if (session && !needsProfileSetup) {
     return <Redirect href="/(app)" />
   }
 
-  // If authenticated but needs profile setup, allow access to username screen
-  // (handled by keeping them in auth flow)
+  // If authenticated but needs profile setup, redirect to username screen
+  // (unless already there)
+  const isOnUsernameScreen = pathname === '/(auth)/username' || pathname === '/username'
+  if (session && needsProfileSetup && !isOnUsernameScreen) {
+    return <Redirect href="/(auth)/username" />
+  }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="login" />
-      <Stack.Screen name="verifying" />
       <Stack.Screen name="username" />
       <Stack.Screen name="email-login" />
       <Stack.Screen name="signup" />
-      {/* Phone auth screens hidden for now */}
-      {/* <Stack.Screen name="phone" /> */}
-      {/* <Stack.Screen name="verify-otp" /> */}
     </Stack>
   )
 }

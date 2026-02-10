@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native'
-import { Link, router } from 'expo-router'
+import { Link } from 'expo-router'
 import { signInWithGoogle } from '@/features/auth/services/auth.service'
 
 export default function LoginScreen() {
@@ -10,11 +10,8 @@ export default function LoginScreen() {
     try {
       setIsGoogleLoading(true)
       await signInWithGoogle()
-      // Navigate to verification screen which will:
-      // 1. Verify the session is fully working
-      // 2. Clear query cache
-      // 3. Navigate to the app when ready
-      router.replace('/(auth)/verifying')
+      // Navigation is handled automatically by (auth)/_layout.tsx
+      // when session becomes available - no manual navigation needed
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to sign in with Google'
       if (message !== 'Google sign-in was cancelled') {
@@ -22,7 +19,6 @@ export default function LoginScreen() {
       }
       setIsGoogleLoading(false)
     }
-    // Note: Don't setIsGoogleLoading(false) on success - we're navigating away
   }
 
   return (
