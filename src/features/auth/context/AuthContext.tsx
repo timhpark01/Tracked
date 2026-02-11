@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [needsProfileSetup, setNeedsProfileSetup] = useState(false)
-  const mounted = useRef(true)
+  const isSigningOut = useRef(false)
 
   // Derived loading state for backwards compatibility
   const loading = status === 'loading'
@@ -37,21 +37,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', userId)
         .maybeSingle()
 
-      if (mounted.current) {
-        setNeedsProfileSetup(!profile || !profile.username)
-      }
+      setNeedsProfileSetup(!profile || !profile.username)
     } catch (error) {
       console.warn('[Auth] Profile check failed:', error)
-      if (mounted.current) {
-        // On error, assume profile exists to avoid blocking login
-        setNeedsProfileSetup(false)
-      }
+      // On error, assume profile exists to avoid blocking login
+      setNeedsProfileSetup(false)
     }
   }, [])
 
   // Sign out and clear all state
   const signOut = useCallback(async () => {
-    console.log('[Auth] Signing out...')
+    isSigningOut.current = true
     setStatus('signing-out')
 
     try {
@@ -69,54 +65,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Clear local state regardless of Supabase result
-      if (mounted.current) {
-        setSession(null)
-        setUser(null)
-        setNeedsProfileSetup(false)
-        setStatus('unauthenticated')
-      }
-
-      console.log('[Auth] Sign out complete')
+      setSession(null)
+      setUser(null)
+      setNeedsProfileSetup(false)
+      setStatus('unauthenticated')
     } catch (error) {
       console.warn('[Auth] Sign out exception:', error)
-      if (mounted.current) {
-        setSession(null)
-        setUser(null)
-        setNeedsProfileSetup(false)
-        setStatus('unauthenticated')
-      }
+      setSession(null)
+      setUser(null)
+      setNeedsProfileSetup(false)
+      setStatus('unauthenticated')
+    } finally {
+      isSigningOut.current = false
     }
   }, [])
 
   useEffect(() => {
-    mounted.current = true
+    // Use local variable instead of ref - scoped to THIS effect run only
+    // This prevents stale closures when React StrictMode double-runs effects
+    let isCancelled = false
 
-    // Initialize session
+    // Initialize session from local storage
+    // Note: Profile check is handled by onAuthStateChange (INITIAL_SESSION event)
     const initSession = async () => {
       try {
-        const sessionPromise = supabase.auth.getSession()
-        const timeoutPromise = new Promise<null>((_, reject) =>
-          setTimeout(() => reject(new Error('Session timeout')), AUTH_TIMEOUTS.SESSION_INIT)
-        )
+        const { data, error } = await supabase.auth.getSession()
 
-        const result = await Promise.race([sessionPromise, timeoutPromise])
-        if (!mounted.current) return
+        if (error) {
+          console.warn('[Auth] getSession error:', error.message)
+        }
 
-        const sessionData = result?.data?.session ?? null
+        if (isCancelled) return
+
+        const sessionData = data?.session ?? null
         const newUser = sessionData?.user ?? null
 
         setSession(sessionData)
         setUser(newUser)
 
-        if (newUser) {
-          await checkProfile(newUser.id)
-          setStatus('authenticated')
-        } else {
+        // Don't set final status here - let onAuthStateChange handle it
+        // This avoids duplicate profile checks
+        if (!newUser) {
           setStatus('unauthenticated')
         }
       } catch (error) {
         console.warn('[Auth] Session init failed:', error)
-        if (mounted.current) {
+        if (!isCancelled) {
           setStatus('unauthenticated')
         }
       }
@@ -124,14 +118,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initSession()
 
-    // Listen for auth changes
+    // Listen for auth changes - this is the single source of truth for auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.log('[Auth] State change:', event, 'hasSession:', !!newSession)
-      if (!mounted.current) return
+      if (isCancelled) return
 
       // Ignore SIGNED_IN events while signing out (stale token refresh events)
-      if (status === 'signing-out' && event === 'SIGNED_IN') {
-        console.log('[Auth] Ignoring SIGNED_IN during sign out')
+      if (isSigningOut.current && event === 'SIGNED_IN') {
         return
       }
 
@@ -141,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (newUser) {
         await checkProfile(newUser.id)
+        if (isCancelled) return
         setStatus('authenticated')
       } else {
         setNeedsProfileSetup(false)
@@ -149,10 +142,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     return () => {
-      mounted.current = false
+      isCancelled = true
       subscription.unsubscribe()
     }
-  }, [checkProfile, status])
+  }, [checkProfile])
 
   return (
     <AuthContext.Provider value={{ session, user, loading, needsProfileSetup, signOut }}>
