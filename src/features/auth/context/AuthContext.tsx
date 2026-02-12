@@ -14,6 +14,8 @@ interface AuthContextType {
   loading: boolean
   needsProfileSetup: boolean
   signOut: () => Promise<void>
+  refreshSession: () => Promise<void>
+  setAuthenticatedSession: (session: Session, user: User) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -44,6 +46,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setNeedsProfileSetup(false)
     }
   }, [])
+
+  // Manually refresh session - useful after OAuth when onAuthStateChange may not fire
+  const refreshSession = useCallback(async () => {
+    try {
+      // First verify the session is actually working by making an authenticated request
+      // This ensures Supabase's internal state is fully initialized
+      const { data: { user: verifiedUser }, error: userError } = await supabase.auth.getUser()
+
+      if (userError || !verifiedUser) {
+        // Session not ready yet, try again after a delay
+        await new Promise(resolve => setTimeout(resolve, 500))
+        const { data: retryData } = await supabase.auth.getUser()
+        if (!retryData.user) {
+          // Still no user, give up and let onAuthStateChange handle it
+          return
+        }
+      }
+
+      // Now get the full session
+      const { data, error } = await supabase.auth.getSession()
+      if (error) return
+
+      const sessionData = data?.session ?? null
+      const newUser = sessionData?.user ?? null
+
+      if (newUser) {
+        // Reset all queries to clear stale data and return to loading state
+        queryClient.resetQueries()
+
+        await checkProfile(newUser.id)
+        setSession(sessionData)
+        setUser(newUser)
+        setStatus('authenticated')
+      } else {
+        setSession(null)
+        setUser(null)
+        setNeedsProfileSetup(false)
+        setStatus('unauthenticated')
+      }
+    } catch (error) {
+      // Silently fail - onAuthStateChange should handle it
+    }
+  }, [checkProfile])
 
   // Sign out and clear all state
   const signOut = useCallback(async () => {
@@ -80,13 +125,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Directly set authenticated session - used by OAuth flows that handle tokens manually
+  // This bypasses onAuthStateChange which may not fire reliably for exchangeCodeForSession
+  const setAuthenticatedSession = useCallback(async (newSession: Session, newUser: User) => {
+    // Reset all queries to clear stale data and return to loading state
+    queryClient.resetQueries()
+
+    await checkProfile(newUser.id)
+    setSession(newSession)
+    setUser(newUser)
+    setStatus('authenticated')
+  }, [checkProfile])
+
   useEffect(() => {
     // Use local variable instead of ref - scoped to THIS effect run only
     // This prevents stale closures when React StrictMode double-runs effects
     let isCancelled = false
 
     // Initialize session from local storage
-    // Note: Profile check is handled by onAuthStateChange (INITIAL_SESSION event)
     const initSession = async () => {
       try {
         const { data, error } = await supabase.auth.getSession()
@@ -103,9 +159,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(sessionData)
         setUser(newUser)
 
-        // Don't set final status here - let onAuthStateChange handle it
-        // This avoids duplicate profile checks
-        if (!newUser) {
+        if (newUser) {
+          // We have a session - check profile and set authenticated
+          // Don't rely solely on onAuthStateChange as it may not fire for OAuth
+          await checkProfile(newUser.id)
+          if (isCancelled) return
+          setStatus('authenticated')
+        } else {
           setStatus('unauthenticated')
         }
       } catch (error) {
@@ -118,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initSession()
 
-    // Listen for auth changes - this is the single source of truth for auth state
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (isCancelled) return
 
@@ -132,6 +192,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(newUser)
 
       if (newUser) {
+        // Reset queries to clear stale data and return to loading state
+        if (event === 'SIGNED_IN') {
+          queryClient.resetQueries()
+        }
         await checkProfile(newUser.id)
         if (isCancelled) return
         setStatus('authenticated')
@@ -148,7 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [checkProfile])
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, needsProfileSetup, signOut }}>
+    <AuthContext.Provider value={{ session, user, loading, needsProfileSetup, signOut, refreshSession, setAuthenticatedSession }}>
       {children}
     </AuthContext.Provider>
   )

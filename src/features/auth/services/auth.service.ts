@@ -194,25 +194,22 @@ export async function signInWithGoogle() {
 
     // Handle PKCE flow - exchange code for session
     if (code && !accessToken) {
-      console.log('[Auth] Exchanging PKCE code for session...')
       const { data: sessionData, error: sessionError } =
         await supabase.auth.exchangeCodeForSession(code)
 
       if (sessionError) {
-        console.log('[Auth] PKCE exchange error:', sessionError)
         throw sessionError
       }
 
-      console.log('[Auth] PKCE session set, verifying...')
+      // Small delay to allow session to persist
+      await new Promise(resolve => setTimeout(resolve, 100))
 
       // Verify the session is actually working
       const { data: { user: verifiedUser }, error: verifyError } = await supabase.auth.getUser()
       if (verifyError || !verifiedUser) {
-        console.log('[Auth] Session verification failed:', verifyError?.message)
         throw new Error('Session verification failed after PKCE exchange')
       }
 
-      console.log('[Auth] PKCE session verified successfully!')
       return { session: sessionData.session, user: verifiedUser }
     }
 

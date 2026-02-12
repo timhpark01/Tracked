@@ -39,20 +39,17 @@ const FEED_SELECT_QUERY = `
 
 /**
  * Fetch paginated feed logs for followed users
- * RLS policy "Followers can view logs" automatically filters results
+ * @param userId - Current user's ID (passed from AuthContext to avoid race conditions)
  * @param start - Starting index (0-based, inclusive)
  * @param end - Ending index (0-based, inclusive)
  * @returns Array of feed logs with nested user/activity data
  */
-export async function getFeedLogs(start: number, end: number): Promise<FeedLog[]> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-
+export async function getFeedLogs(userId: string, start: number, end: number): Promise<FeedLog[]> {
   // Get list of users the current user follows
   const { data: following } = await supabase
     .from('follows')
     .select('following_id')
-    .eq('follower_id', user.id)
+    .eq('follower_id', userId)
 
   const followingIds = following?.map(f => f.following_id) ?? []
 

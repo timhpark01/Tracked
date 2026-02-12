@@ -12,24 +12,24 @@ const PAGE_SIZE = 20
 export function useFeed(feedType: FeedType = 'following') {
   const { user, loading: authLoading } = useAuth()
 
-  console.log('[Feed] useFeed called, authLoading:', authLoading, 'userId:', user?.id?.slice(0, 8) ?? 'null')
+  // For public feed, only need auth to not be loading
+  // For following feed, need auth done AND a valid user with ID
+  const userId = user?.id
+  const isEnabled = feedType === 'public'
+    ? !authLoading
+    : !authLoading && !!userId
 
   return useInfiniteQuery({
-    queryKey: ['feed', feedType, user?.id ?? 'anonymous'],
+    queryKey: ['feed', feedType, userId ?? 'anonymous'],
     queryFn: async ({ pageParam = 0 }) => {
-      console.log('[Feed] Fetching page', pageParam, 'for', feedType)
       const start = pageParam * PAGE_SIZE
       const end = start + PAGE_SIZE - 1
 
       if (feedType === 'public') {
-        const result = await getPublicFeedLogs(start, end)
-        console.log('[Feed] Got', result.length, 'public items')
-        return result
+        return await getPublicFeedLogs(start, end)
       }
-      // getFeedLogs handles the case when user is not authenticated
-      const result = await getFeedLogs(start, end)
-      console.log('[Feed] Got', result.length, 'following items')
-      return result
+      // userId is guaranteed to exist here because of enabled check
+      return await getFeedLogs(userId!, start, end)
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
@@ -37,9 +37,7 @@ export function useFeed(feedType: FeedType = 'following') {
       if (lastPage.length < PAGE_SIZE) return undefined
       return lastPageParam + 1
     },
-    // Wait for auth to finish loading before fetching
-    // This prevents fetching with stale/no auth state
-    enabled: !authLoading,
+    enabled: isEnabled,
     staleTime: 2 * 60 * 1000, // 2 minutes (feeds change frequently)
     gcTime: 24 * 60 * 60 * 1000, // 24 hours (mobile-optimized)
   })
