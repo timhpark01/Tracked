@@ -2,23 +2,15 @@ import { useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native'
 import { Link } from 'expo-router'
 import { signInWithGoogle } from '@/features/auth/services/auth.service'
-import { useAuth } from '@/features/auth'
 
 export default function LoginScreen() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const { setAuthenticatedSession } = useAuth()
 
   async function handleGoogleSignIn() {
     try {
       setIsGoogleLoading(true)
-      const { session, user } = await signInWithGoogle()
-      // Directly set auth state with the session and user from OAuth
-      // This bypasses onAuthStateChange which may not fire reliably
-      if (session && user) {
-        await setAuthenticatedSession(session, user)
-      }
-      // Navigation is handled automatically by (auth)/_layout.tsx
-      // when session becomes available
+      await signInWithGoogle()
+      // Navigation handled automatically by layout when auth state updates
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to sign in with Google'
       if (message !== 'Google sign-in was cancelled') {

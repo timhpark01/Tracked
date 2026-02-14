@@ -138,7 +138,6 @@ export function getOAuthRedirectUri() {
  */
 export async function signInWithGoogle() {
   const redirectUri = getOAuthRedirectUri()
-  console.log('[Auth] Redirect URI:', redirectUri)
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -148,12 +147,8 @@ export async function signInWithGoogle() {
     },
   })
 
-  console.log('[Auth] OAuth response:', { url: data?.url, error })
-
   if (error) throw error
   if (!data.url) throw new Error('No OAuth URL returned')
-
-  console.log('[Auth] Opening OAuth URL:', data.url)
 
   // Open the OAuth URL in a browser
   const result = await WebBrowser.openAuthSessionAsync(
@@ -162,16 +157,10 @@ export async function signInWithGoogle() {
     { showInRecents: true }
   )
 
-  console.log('[Auth] WebBrowser result type:', result.type)
-  console.log('[Auth] WebBrowser result:', JSON.stringify(result, null, 2))
-
   if (result.type === 'success') {
-    console.log('[Auth] Success! Callback URL:', result.url)
 
     // Extract tokens from the URL
     const url = new URL(result.url)
-    console.log('[Auth] URL hash:', url.hash)
-    console.log('[Auth] URL search:', url.search)
 
     // Try hash first (implicit flow), then search params (PKCE flow)
     let params = new URLSearchParams(url.hash.substring(1))
@@ -180,7 +169,6 @@ export async function signInWithGoogle() {
 
     // If not in hash, check query params
     if (!accessToken) {
-      console.log('[Auth] No token in hash, checking query params...')
       params = new URLSearchParams(url.search)
       accessToken = params.get('access_token')
       refreshToken = params.get('refresh_token')
@@ -188,9 +176,6 @@ export async function signInWithGoogle() {
 
     // Check for PKCE code parameter (Supabase may use PKCE flow)
     const code = params.get('code') || new URLSearchParams(url.search).get('code')
-    console.log('[Auth] Access token found:', !!accessToken)
-    console.log('[Auth] Refresh token found:', !!refreshToken)
-    console.log('[Auth] PKCE code found:', !!code)
 
     // Handle PKCE flow - exchange code for session
     if (code && !accessToken) {
@@ -206,6 +191,7 @@ export async function signInWithGoogle() {
 
       // Verify the session is actually working
       const { data: { user: verifiedUser }, error: verifyError } = await supabase.auth.getUser()
+
       if (verifyError || !verifiedUser) {
         throw new Error('Session verification failed after PKCE exchange')
       }
@@ -213,55 +199,34 @@ export async function signInWithGoogle() {
       return { session: sessionData.session, user: verifiedUser }
     }
 
-    if (accessToken) {
-      // Set the session with the tokens from the OAuth callback
-      console.log('[Auth] Setting session...')
-      const { data: sessionData, error: sessionError } =
-        await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || '',
-        })
+    if (accessToken || code) {
+      const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken!,
+        refresh_token: refreshToken || '',
+      })
 
-      if (sessionError) {
-        console.log('[Auth] Session error:', sessionError)
-        throw sessionError
-      }
+      if (sessionError) throw sessionError
+      if (!sessionData?.session?.user) throw new Error('No user in session')
 
-      console.log('[Auth] Session set, verifying...')
-
-      // Verify the session is actually working
-      const { data: { user: verifiedUser }, error: verifyError } = await supabase.auth.getUser()
-      if (verifyError || !verifiedUser) {
-        console.log('[Auth] Session verification failed:', verifyError?.message)
-        throw new Error('Session verification failed after setSession')
-      }
-
-      console.log('[Auth] Session verified successfully!')
-      return { session: sessionData.session, user: verifiedUser }
+      return { session: sessionData.session, user: sessionData.session.user }
     } else {
-      console.log('[Auth] No access token found in callback URL')
-      throw new Error('No access token in callback')
+      throw new Error('No access token or code in callback')
     }
   }
 
   // For Expo Go: browser was dismissed, check if session was set via deep link
   if (result.type === 'dismiss') {
-    console.log('[Auth] Browser dismissed, checking for session...')
     // Give Supabase a moment to process the deep link
     await new Promise(resolve => setTimeout(resolve, 1000))
 
     const { data: { session } } = await supabase.auth.getSession()
     if (session) {
-      console.log('[Auth] Session found after dismiss!')
       return { session, user: session.user }
     }
   }
 
   if (result.type === 'cancel') {
-    console.log('[Auth] User cancelled')
     throw new Error('Google sign-in was cancelled')
   }
-
-  console.log('[Auth] Unknown result type:', result.type)
   throw new Error('Google sign-in failed')
 }
