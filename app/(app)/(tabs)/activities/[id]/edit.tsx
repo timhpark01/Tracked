@@ -1,6 +1,8 @@
 // app/(app)/activities/[id]/edit.tsx
 import { View, ActivityIndicator, StyleSheet, Alert, ScrollView, Text, TouchableOpacity } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { useActivity, useUpdateActivity } from '@/features/activities'
 import { ActivityForm } from '@/features/activities/components/ActivityForm'
 
@@ -11,20 +13,28 @@ export default function EditActivityScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#007AFF" />
-      </View>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#007AFF" />
+        </View>
+      </SafeAreaView>
     )
   }
 
   if (error || !activity) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>Activity not found</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+            <Ionicons name="close" size={24} color="#6b7280" />
+          </TouchableOpacity>
+          <Text style={styles.title}>Edit Activity</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>Activity not found</Text>
+        </View>
+      </SafeAreaView>
     )
   }
 
@@ -32,7 +42,6 @@ export default function EditActivityScreen() {
     name: string
     description?: string | null
     category?: string | null
-    goal_total?: number | null
   }) => {
     try {
       await updateActivity.mutateAsync({
@@ -41,7 +50,6 @@ export default function EditActivityScreen() {
           name: data.name,
           description: data.description,
           category: data.category,
-          goal_total: data.goal_total,
         },
       })
       router.back()
@@ -51,17 +59,50 @@ export default function EditActivityScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-      <ActivityForm
-        initialData={activity}
-        onSubmit={handleSubmit}
-        isLoading={updateActivity.isPending}
-      />
-    </ScrollView>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+          <Ionicons name="close" size={24} color="#6b7280" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Edit Activity</Text>
+        <View style={styles.placeholder} />
+      </View>
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+        <ActivityForm
+          initialData={activity}
+          onSubmit={handleSubmit}
+          isLoading={updateActivity.isPending}
+        />
+      </ScrollView>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  placeholder: {
+    width: 32,
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
@@ -76,17 +117,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#ef4444',
-    marginBottom: 16,
-  },
-  backButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-  },
-  backButtonText: {
-    fontSize: 14,
-    color: '#374151',
-    fontWeight: '500',
   },
 })

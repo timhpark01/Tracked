@@ -27,7 +27,6 @@ export function useCreateActivity() {
         name: newActivity.name,
         description: newActivity.description ?? null,
         category: newActivity.category ?? null,
-        goal_total: newActivity.goal_total ?? null,
         created_at: new Date().toISOString(),
       }
 

@@ -1,15 +1,30 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useMemo } from 'react'
 import { useActivities } from '@/features/activities'
+import { useAllUserProjects } from '@/features/projects'
 import { useAuth } from '@/features/auth'
 
 export default function AddEntryScreen() {
   const { user, loading: authLoading } = useAuth()
   const { data: activities, isLoading: activitiesLoading } = useActivities()
+  const { data: allProjects, isLoading: projectsLoading } = useAllUserProjects()
 
-  // Show loading if auth is loading or activities query is loading
-  if (authLoading || (user && activitiesLoading)) {
+  // Count projects per activity
+  const activityStats = useMemo(() => {
+    if (!allProjects || !activities) return new Map()
+
+    const stats = new Map<string, number>()
+    activities.forEach((activity) => {
+      const count = allProjects.filter((p) => p.activity_id === activity.id).length
+      stats.set(activity.id, count)
+    })
+    return stats
+  }, [allProjects, activities])
+
+  // Show loading if auth is loading or queries are loading
+  if (authLoading || (user && (activitiesLoading || projectsLoading))) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#007AFF" />
@@ -38,26 +53,41 @@ export default function AddEntryScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Log Entry</Text>
-        <Text style={styles.subtitle}>Select an activity to log progress</Text>
+        <Text style={styles.title}>Activities</Text>
+        <Text style={styles.subtitle}>Select an activity to view projects and log progress</Text>
       </View>
 
-      <View style={styles.list}>
-        {activities.map((activity) => (
-          <Pressable
-            key={activity.id}
-            style={styles.activityItem}
-            onPress={() => router.push(`/activities/${activity.id}/log`)}
-          >
-            <View style={styles.activityInfo}>
-              <Text style={styles.activityName}>{activity.name}</Text>
-              {activity.category && (
-                <Text style={styles.activityType}>{activity.category}</Text>
-              )}
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-          </Pressable>
-        ))}
+      <View style={styles.cardList}>
+        {activities.map((activity) => {
+          const projectCount = activityStats.get(activity.id) ?? 0
+          return (
+            <Pressable
+              key={activity.id}
+              style={styles.activityCard}
+              onPress={() => router.push(`/activities/${activity.id}`)}
+            >
+              <View style={styles.cardContent}>
+                <Text style={styles.activityName}>{activity.name}</Text>
+                {activity.description && (
+                  <Text style={styles.activityDescription} numberOfLines={2}>
+                    {activity.description}
+                  </Text>
+                )}
+                <View style={styles.cardMeta}>
+                  {activity.category && (
+                    <View style={styles.categoryBadge}>
+                      <Text style={styles.categoryText}>{activity.category}</Text>
+                    </View>
+                  )}
+                  <Text style={styles.projectCount}>
+                    {projectCount} {projectCount === 1 ? 'project' : 'projects'}
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+            </Pressable>
+          )
+        })}
       </View>
 
       <Pressable
@@ -74,13 +104,13 @@ export default function AddEntryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f9fafb',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#f9fafb',
   },
   header: {
     padding: 24,
@@ -96,29 +126,56 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginTop: 4,
   },
-  list: {
+  cardList: {
     paddingHorizontal: 16,
+    gap: 12,
   },
-  activityItem: {
+  activityCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#fff',
     padding: 16,
     borderRadius: 12,
-    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  activityInfo: {
+  cardContent: {
     flex: 1,
   },
   activityName: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '600',
     color: '#111827',
+    marginBottom: 4,
   },
-  activityType: {
+  activityDescription: {
     fontSize: 14,
     color: '#6b7280',
-    marginTop: 2,
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  cardMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  categoryBadge: {
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  categoryText: {
+    fontSize: 12,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  projectCount: {
+    fontSize: 13,
+    color: '#9ca3af',
   },
   newActivityButton: {
     flexDirection: 'row',
@@ -126,12 +183,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 16,
     marginHorizontal: 16,
-    marginTop: 16,
+    marginTop: 24,
     marginBottom: 32,
     borderWidth: 1,
     borderColor: '#e5e7eb',
     borderRadius: 12,
     borderStyle: 'dashed',
+    backgroundColor: '#fff',
   },
   newActivityText: {
     fontSize: 16,
@@ -143,7 +201,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#f9fafb',
     paddingHorizontal: 32,
   },
   emptyTitle: {

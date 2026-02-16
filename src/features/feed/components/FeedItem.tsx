@@ -44,7 +44,7 @@ function formatValue(value: number): string {
 }
 
 function FeedItemComponent({ log, reactionInfo, commentCount }: FeedItemProps) {
-  const { user, activity } = log
+  const { user, activity, project } = log
   const avatarUri = user.avatar_url || undefined
   const displayValue = formatValue(log.value)
 
@@ -80,9 +80,12 @@ function FeedItemComponent({ log, reactionInfo, commentCount }: FeedItemProps) {
         </View>
       </View>
 
-      {/* Activity & Value */}
+      {/* Activity: Project & Value */}
       <View style={styles.contentRow}>
-        <Text style={styles.activityName}>{activity.name}</Text>
+        <Text style={styles.activityProject}>
+          <Text style={styles.activityName}>{activity.name}</Text>
+          <Text style={styles.projectName}> - {project.name}</Text>
+        </Text>
         <Text style={styles.value}>{displayValue}</Text>
       </View>
 
@@ -205,9 +208,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  activityName: {
+  activityProject: {
+    flex: 1,
     fontSize: 16,
-    fontWeight: '500',
+    color: '#374151',
+  },
+  activityName: {
+    fontWeight: '700',
+    color: '#111827',
+  },
+  projectName: {
+    fontWeight: '400',
     color: '#374151',
   },
   value: {

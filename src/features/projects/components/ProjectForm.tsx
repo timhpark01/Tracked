@@ -1,4 +1,4 @@
-// src/features/activities/components/ActivityForm.tsx
+// src/features/projects/components/ProjectForm.tsx
 import { View, TouchableOpacity, StyleSheet, ActivityIndicator, Text } from 'react-native'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -6,36 +6,27 @@ import { z } from 'zod'
 import { ControlledInput, ControlledTextArea } from '@/components/forms'
 import type { Database } from '@/types/database'
 
-type Activity = Database['public']['Tables']['activities']['Row']
+type Project = Database['public']['Tables']['projects']['Row']
 
-const activitySchema = z.object({
+const projectSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or less'),
   description: z.string().max(500, 'Description must be 500 characters or less').optional(),
-  category: z.string().max(50, 'Category must be 50 characters or less').optional(),
 })
 
-type ActivityFormData = z.infer<typeof activitySchema>
+type ProjectFormData = z.infer<typeof projectSchema>
 
-interface ActivityFormProps {
-  initialData?: Partial<Activity>
-  onSubmit: (data: {
-    name: string
-    description?: string | null
-    category?: string | null
-  }) => void
+interface ProjectFormProps {
+  initialData?: Partial<Project>
+  onSubmit: (data: { name: string; description?: string | null }) => void
   isLoading?: boolean
 }
 
-export function ActivityForm({ initialData, onSubmit, isLoading = false }: ActivityFormProps) {
-  const {
-    control,
-    handleSubmit,
-  } = useForm<ActivityFormData>({
-    resolver: zodResolver(activitySchema),
+export function ProjectForm({ initialData, onSubmit, isLoading = false }: ProjectFormProps) {
+  const { control, handleSubmit } = useForm<ProjectFormData>({
+    resolver: zodResolver(projectSchema),
     defaultValues: {
       name: initialData?.name ?? '',
       description: initialData?.description ?? '',
-      category: initialData?.category ?? '',
     },
   })
 
@@ -43,7 +34,6 @@ export function ActivityForm({ initialData, onSubmit, isLoading = false }: Activ
     onSubmit({
       name: data.name,
       description: data.description || null,
-      category: data.category || null,
     })
   })
 
@@ -52,16 +42,8 @@ export function ActivityForm({ initialData, onSubmit, isLoading = false }: Activ
       <ControlledInput
         control={control}
         name="name"
-        label="Activity Name"
-        placeholder="e.g., Running, Reading, Coding"
-        style={styles.field}
-      />
-
-      <ControlledInput
-        control={control}
-        name="category"
-        label="Category"
-        placeholder="e.g., Fitness, Learning, Creative"
+        label="Project Name"
+        placeholder="e.g., Marathon Training, Learn Spanish"
         style={styles.field}
       />
 
@@ -69,7 +51,7 @@ export function ActivityForm({ initialData, onSubmit, isLoading = false }: Activ
         control={control}
         name="description"
         label="Description"
-        placeholder="What is this activity about?"
+        placeholder="What is this project about?"
         style={styles.field}
       />
 
@@ -82,7 +64,7 @@ export function ActivityForm({ initialData, onSubmit, isLoading = false }: Activ
           <ActivityIndicator color="#fff" />
         ) : (
           <Text style={styles.submitButtonText}>
-            {initialData ? 'Update Activity' : 'Create Activity'}
+            {initialData ? 'Update Project' : 'Create Project'}
           </Text>
         )}
       </TouchableOpacity>

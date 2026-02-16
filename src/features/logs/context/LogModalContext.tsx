@@ -3,7 +3,8 @@ import { createContext, useContext, useState, useCallback, ReactNode } from 'rea
 
 interface LogModalContextValue {
   isModalVisible: boolean
-  openModal: () => void
+  preSelectedActivityId: string | null
+  openModal: (activityId?: string) => void
   closeModal: () => void
 }
 
@@ -11,17 +12,20 @@ const LogModalContext = createContext<LogModalContextValue | null>(null)
 
 export function LogModalProvider({ children }: { children: ReactNode }) {
   const [isModalVisible, setIsModalVisible] = useState(false)
+  const [preSelectedActivityId, setPreSelectedActivityId] = useState<string | null>(null)
 
-  const openModal = useCallback(() => {
+  const openModal = useCallback((activityId?: string) => {
+    setPreSelectedActivityId(activityId ?? null)
     setIsModalVisible(true)
   }, [])
 
   const closeModal = useCallback(() => {
     setIsModalVisible(false)
+    setPreSelectedActivityId(null)
   }, [])
 
   return (
-    <LogModalContext.Provider value={{ isModalVisible, openModal, closeModal }}>
+    <LogModalContext.Provider value={{ isModalVisible, preSelectedActivityId, openModal, closeModal }}>
       {children}
     </LogModalContext.Provider>
   )

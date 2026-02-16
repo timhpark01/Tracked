@@ -2,10 +2,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { getLogs } from '../services/logs.service'
 
-export function useLogs(activityId: string) {
+export function useLogs(projectId: string) {
   return useQuery({
-    queryKey: ['logs', activityId],
-    queryFn: () => getLogs(activityId),
-    enabled: !!activityId,
+    queryKey: ['logs', projectId],
+    queryFn: () => getLogs(projectId),
+    enabled: !!projectId,
   })
 }

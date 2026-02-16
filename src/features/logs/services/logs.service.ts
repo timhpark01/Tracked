@@ -5,11 +5,22 @@ import type { Database } from '@/types/database'
 type ActivityLog = Database['public']['Tables']['activity_logs']['Row']
 type ActivityLogInsert = Database['public']['Tables']['activity_logs']['Insert']
 
-export async function getLogs(activityId: string): Promise<ActivityLog[]> {
+export async function getLogs(projectId: string): Promise<ActivityLog[]> {
   const { data, error } = await supabase
     .from('activity_logs')
     .select('*')
-    .eq('activity_id', activityId)
+    .eq('project_id', projectId)
+    .order('logged_at', { ascending: false })
+
+  if (error) throw error
+  return data
+}
+
+export async function getLogsByActivity(activityId: string): Promise<ActivityLog[]> {
+  const { data, error } = await supabase
+    .from('activity_logs')
+    .select('*, projects!inner(activity_id)')
+    .eq('projects.activity_id', activityId)
     .order('logged_at', { ascending: false })
 
   if (error) throw error

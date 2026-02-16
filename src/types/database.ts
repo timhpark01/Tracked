@@ -38,7 +38,6 @@ export type Database = {
           name: string
           description: string | null
           category: string | null
-          goal_total: number | null
           created_at: string
         }
         Insert: {
@@ -47,7 +46,6 @@ export type Database = {
           name: string
           description?: string | null
           category?: string | null
-          goal_total?: number | null
           created_at?: string
         }
         Update: {
@@ -56,7 +54,6 @@ export type Database = {
           name?: string
           description?: string | null
           category?: string | null
-          goal_total?: number | null
           created_at?: string
         }
         Relationships: [
@@ -69,10 +66,53 @@ export type Database = {
           }
         ]
       }
+      projects: {
+        Row: {
+          id: string
+          activity_id: string
+          user_id: string
+          name: string
+          description: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          activity_id: string
+          user_id: string
+          name: string
+          description?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          activity_id?: string
+          user_id?: string
+          name?: string
+          description?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'projects_activity_id_fkey'
+            columns: ['activity_id']
+            isOneToOne: false
+            referencedRelation: 'activities'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'projects_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       activity_logs: {
         Row: {
           id: string
           activity_id: string
+          project_id: string
           user_id: string
           value: number
           note: string | null
@@ -84,6 +124,7 @@ export type Database = {
         Insert: {
           id?: string
           activity_id: string
+          project_id: string
           user_id: string
           value: number
           note?: string | null
@@ -95,6 +136,7 @@ export type Database = {
         Update: {
           id?: string
           activity_id?: string
+          project_id?: string
           user_id?: string
           value?: number
           note?: string | null
@@ -109,6 +151,13 @@ export type Database = {
             columns: ['activity_id']
             isOneToOne: false
             referencedRelation: 'activities'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'activity_logs_project_id_fkey'
+            columns: ['project_id']
+            isOneToOne: false
+            referencedRelation: 'projects'
             referencedColumns: ['id']
           },
           {

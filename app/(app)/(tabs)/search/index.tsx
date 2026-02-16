@@ -1,5 +1,5 @@
 // app/(app)/search/index.tsx
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Image,
   ActivityIndicator,
   StyleSheet,
+  DeviceEventEmitter,
 } from 'react-native'
 import { router } from 'expo-router'
 import { useSearchUsers } from '@/features/social'
@@ -17,6 +18,15 @@ import type { Profile } from '@/features/social'
 export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
+  const inputRef = useRef<TextInput>(null)
+
+  // Listen for focus event from tab press
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener('focusSearchInput', () => {
+      inputRef.current?.focus()
+    })
+    return () => subscription.remove()
+  }, [])
 
   // Debounce search query by 300ms
   useEffect(() => {
@@ -85,6 +95,7 @@ export default function SearchScreen() {
     <View style={styles.container}>
       <View style={styles.searchContainer}>
         <TextInput
+          ref={inputRef}
           style={styles.searchInput}
           placeholder="Search by username..."
           placeholderTextColor="#9ca3af"

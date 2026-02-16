@@ -5,6 +5,7 @@ import { uploadLogPhoto } from '@/lib/storage'
 import { useAuth } from '@/features/auth'
 
 interface CreateLogInput {
+  projectId: string
   activityId: string
   value: number
   note?: string
@@ -32,6 +33,7 @@ export function useCreateLog() {
       }
 
       return createLog({
+        project_id: input.projectId,
         activity_id: input.activityId,
         user_id: user.id,
         value: input.value,
@@ -41,8 +43,9 @@ export function useCreateLog() {
       })
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['logs', variables.activityId] })
-      queryClient.invalidateQueries({ queryKey: ['activity-stats', variables.activityId] })
+      queryClient.invalidateQueries({ queryKey: ['logs', variables.projectId] })
+      queryClient.invalidateQueries({ queryKey: ['projects', variables.activityId] })
+      queryClient.invalidateQueries({ queryKey: ['recent-projects', user?.id] })
       // Invalidate feed so followers see the new log
       queryClient.invalidateQueries({ queryKey: ['feed'] })
     },

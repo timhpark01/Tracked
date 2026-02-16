@@ -2,16 +2,13 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert, ScrollView } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useActivity, useDeleteActivity } from '@/features/activities'
-import { useLogs, useDeleteLog, LogHistory } from '@/features/logs'
-import { useActivityStats, ProgressBar } from '@/features/stats'
+import { useProjects, ProjectList } from '@/features/projects'
 
 export default function ProfileActivityDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { data: activity, isLoading, error } = useActivity(id ?? '')
-  const { data: logs, isLoading: logsLoading } = useLogs(id ?? '')
-  const { data: stats } = useActivityStats(id ?? '')
+  const { data: projects, isLoading: projectsLoading } = useProjects(id ?? '')
   const deleteActivity = useDeleteActivity()
-  const deleteLog = useDeleteLog()
 
   if (isLoading) {
     return (
@@ -74,33 +71,6 @@ export default function ProfileActivityDetailScreen() {
         </View>
       )}
 
-      {activity.goal_total && stats && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Progress</Text>
-          <ProgressBar
-            progress={stats.progressPercent}
-            total={stats.goalTotal ?? 0}
-            current={stats.totalValue}
-            unit="minutes"
-            style={styles.progressBar}
-          />
-        </View>
-      )}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Stats</Text>
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{stats?.logCount ?? 0}</Text>
-            <Text style={styles.statLabel}>logs</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{stats?.totalValue ?? 0}</Text>
-            <Text style={styles.statLabel}>minutes</Text>
-          </View>
-        </View>
-      </View>
-
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Created</Text>
         <Text style={styles.dateText}>
@@ -110,17 +80,10 @@ export default function ProfileActivityDetailScreen() {
 
       <View style={styles.actions}>
         <TouchableOpacity
-          style={styles.logButton}
-          onPress={() => router.push(`/activities/${activity.id}/log`)}
-        >
-          <Text style={styles.logButtonText}>Log Progress</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
           style={styles.editButton}
           onPress={() => router.push(`/activities/${activity.id}/edit`)}
         >
-          <Text style={styles.editButtonText}>Edit</Text>
+          <Text style={styles.editButtonText}>Edit Activity</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -129,22 +92,30 @@ export default function ProfileActivityDetailScreen() {
           disabled={deleteActivity.isPending}
         >
           <Text style={styles.deleteButtonText}>
-            {deleteActivity.isPending ? 'Deleting...' : 'Delete'}
+            {deleteActivity.isPending ? 'Deleting...' : 'Delete Activity'}
           </Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.historySection}>
-        <Text style={styles.historyTitle}>Log History</Text>
-        {logsLoading ? (
-          <ActivityIndicator size="small" color="#007AFF" style={styles.logsLoader} />
+      <View style={styles.projectsSection}>
+        <View style={styles.projectsHeader}>
+          <Text style={styles.projectsTitle}>Projects</Text>
+          <TouchableOpacity
+            style={styles.addProjectButton}
+            onPress={() => router.push(`/activities/${activity.id}/projects/new`)}
+          >
+            <Text style={styles.addProjectButtonText}>+ Add Project</Text>
+          </TouchableOpacity>
+        </View>
+        {projectsLoading ? (
+          <ActivityIndicator size="small" color="#007AFF" style={styles.projectsLoader} />
         ) : (
-          <LogHistory
-            logs={logs ?? []}
-            unit="minutes"
-            onDeleteLog={(logId) =>
-              deleteLog.mutate({ logId, activityId: activity.id })
+          <ProjectList
+            projects={projects ?? []}
+            onProjectPress={(project) =>
+              router.push(`/activities/${activity.id}/projects/${project.id}`)
             }
+            emptyMessage="No projects yet. Create one to start logging!"
           />
         )}
       </View>
@@ -222,17 +193,6 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 12,
   },
-  logButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  logButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
   editButton: {
     backgroundColor: '#f3f4f6',
     paddingVertical: 16,
@@ -254,38 +214,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  progressBar: {
-    marginTop: 8,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 24,
-    marginTop: 8,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#007AFF',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 2,
-  },
-  historySection: {
+  projectsSection: {
     paddingTop: 16,
   },
-  historyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
+  projectsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 24,
     marginBottom: 12,
   },
-  logsLoader: {
+  projectsTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  addProjectButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#007AFF',
+    borderRadius: 6,
+  },
+  addProjectButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  projectsLoader: {
     marginVertical: 24,
   },
 })

@@ -24,13 +24,6 @@ export function ActivityCard({ activity, onPress }: ActivityCardProps) {
         </Text>
       )}
 
-      {activity.goal_total && (
-        <View style={styles.goalContainer}>
-          <Text style={styles.goalLabel}>Goal:</Text>
-          <Text style={styles.goalValue}>{activity.goal_total} hours</Text>
-        </View>
-      )}
-
       {activity.category && (
         <View style={styles.categoryContainer}>
           <Text style={styles.categoryText}>{activity.category}</Text>
@@ -61,21 +54,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6b7280',
     marginBottom: 8,
-  },
-  goalContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  goalLabel: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginRight: 4,
-  },
-  goalValue: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
   },
   categoryContainer: {
     marginTop: 8,

@@ -1,36 +1,29 @@
-// app/(app)/activities/new.tsx
-import { View, Text, StyleSheet, Alert, ScrollView, TouchableOpacity } from 'react-native'
+// app/(app)/(tabs)/activities/[id]/projects/new.tsx
+import { View, Text, StyleSheet, Alert, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useCreateActivity } from '@/features/activities'
-import { ActivityForm } from '@/features/activities/components/ActivityForm'
+import { ProjectForm, useCreateProject } from '@/features/projects'
 import { useAuth } from '@/features/auth'
 
-export default function NewActivityScreen() {
+export default function NewProjectScreen() {
+  const { id: activityId } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
-  const createActivity = useCreateActivity()
+  const createProject = useCreateProject()
 
-  const handleSubmit = async (data: {
-    name: string
-    description?: string | null
-    category?: string | null
-  }) => {
-    if (!user) {
-      Alert.alert('Error', 'You must be logged in to create an activity')
-      return
-    }
+  const handleSubmit = async (data: { name: string; description?: string | null }) => {
+    if (!user || !activityId) return
 
     try {
-      await createActivity.mutateAsync({
+      await createProject.mutateAsync({
+        activity_id: activityId,
         user_id: user.id,
         name: data.name,
         description: data.description,
-        category: data.category,
       })
       router.back()
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to create activity')
+      Alert.alert('Error', error.message || 'Failed to create project')
     }
   }
 
@@ -40,12 +33,17 @@ export default function NewActivityScreen() {
         <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
           <Ionicons name="close" size={24} color="#6b7280" />
         </TouchableOpacity>
-        <Text style={styles.title}>New Activity</Text>
+        <Text style={styles.title}>New Project</Text>
         <View style={styles.placeholder} />
       </View>
-      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-        <ActivityForm onSubmit={handleSubmit} isLoading={createActivity.isPending} />
-      </ScrollView>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={styles.content}>
+          <ProjectForm onSubmit={handleSubmit} isLoading={createProject.isPending} />
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
@@ -78,5 +76,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  content: {
+    flex: 1,
   },
 })

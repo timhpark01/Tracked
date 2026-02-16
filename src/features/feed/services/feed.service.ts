@@ -16,6 +16,10 @@ export type FeedLog = {
     id: string
     name: string
   }
+  project: {
+    id: string
+    name: string
+  }
 }
 
 export type FeedType = 'public' | 'following'
@@ -32,6 +36,10 @@ const FEED_SELECT_QUERY = `
     avatar_url
   ),
   activity:activities!inner (
+    id,
+    name
+  ),
+  project:projects!inner (
     id,
     name
   )

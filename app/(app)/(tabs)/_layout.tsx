@@ -1,16 +1,13 @@
 // app/(app)/(tabs)/_layout.tsx
-import { Tabs, usePathname } from 'expo-router'
-import { View, StyleSheet } from 'react-native'
+import { Tabs, router, usePathname } from 'expo-router'
+import { View, StyleSheet, DeviceEventEmitter } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { LogProgressModal, useLogModal } from '@/features/logs'
 
 export default function TabsLayout() {
   const pathname = usePathname()
-  const { openModal } = useLogModal()
 
   return (
-    <>
-      <Tabs
+    <Tabs
         screenOptions={{
           tabBarActiveTintColor: '#007AFF',
           headerShown: true,
@@ -31,6 +28,7 @@ export default function TabsLayout() {
           name="activities"
           options={{
             href: null, // Hide from tab bar but keep routes accessible
+            headerShown: false, // Stack handles its own header
           }}
         />
         <Tabs.Screen
@@ -42,6 +40,13 @@ export default function TabsLayout() {
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="search" size={size} color={color} />
             ),
+          }}
+          listeners={{
+            tabPress: () => {
+              if (pathname.startsWith('/search')) {
+                DeviceEventEmitter.emit('focusSearchInput')
+              }
+            },
           }}
         />
         <Tabs.Screen
@@ -57,10 +62,10 @@ export default function TabsLayout() {
           }}
           listeners={{
             tabPress: (e) => {
-              // If already on the add page, open the modal instead of navigating
+              // If already on the add page, navigate to log page
               if (pathname === '/add') {
                 e.preventDefault()
-                openModal()
+                router.push('/log')
               }
             },
           }}
@@ -86,9 +91,7 @@ export default function TabsLayout() {
             ),
           }}
         />
-      </Tabs>
-      <LogProgressModal />
-    </>
+    </Tabs>
   )
 }
 
