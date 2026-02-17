@@ -32,6 +32,13 @@ export default function AppLayout() {
       >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
+          name="activities"
+          options={{
+            headerShown: false,
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
           name="comments"
           options={{
             headerShown: false,

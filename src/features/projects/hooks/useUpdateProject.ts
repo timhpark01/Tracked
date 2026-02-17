@@ -1,13 +1,11 @@
 // src/features/projects/hooks/useUpdateProject.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { updateProject } from '../services/projects.service'
-import { useAuth } from '@/features/auth'
 import type { Database } from '@/types/database'
 
 type ProjectUpdate = Database['public']['Tables']['projects']['Update']
 
 export function useUpdateProject() {
-  const { user } = useAuth()
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -16,7 +14,7 @@ export function useUpdateProject() {
     onSuccess: (updatedProject) => {
       queryClient.invalidateQueries({ queryKey: ['project', updatedProject.id] })
       queryClient.invalidateQueries({ queryKey: ['projects', updatedProject.activity_id] })
-      queryClient.invalidateQueries({ queryKey: ['all-projects', user?.id] })
+      queryClient.invalidateQueries({ queryKey: ['all-projects', updatedProject.user_id] })
     },
   })
 }

@@ -1,6 +1,7 @@
 // src/features/activities/hooks/useCreateActivity.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createActivity } from '../services/activities.service'
+import { createProject } from '@/features/projects/services/projects.service'
 import { useAuth } from '@/features/auth'
 import type { Database } from '@/types/database'
 
@@ -37,6 +38,21 @@ export function useCreateActivity() {
 
       // Return context with snapshot
       return { previousActivities }
+    },
+    onSuccess: async (newActivity) => {
+      // Create a "General" project for the new activity
+      try {
+        await createProject({
+          activity_id: newActivity.id,
+          user_id: newActivity.user_id,
+          name: 'General',
+          description: null,
+        })
+        // Invalidate projects query for this activity
+        queryClient.invalidateQueries({ queryKey: ['projects', newActivity.id] })
+      } catch (error) {
+        console.error('Failed to create General project:', error)
+      }
     },
     onError: (_err, _newActivity, context) => {
       // Rollback to previous value on error

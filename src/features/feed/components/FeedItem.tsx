@@ -3,6 +3,7 @@ import React, { memo } from 'react'
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import * as Haptics from 'expo-haptics'
 import { useToggleReaction, type ReactionInfo } from '@/features/reactions'
 import type { FeedLog } from '../services/feed.service'
 
@@ -52,6 +53,7 @@ function FeedItemComponent({ log, reactionInfo, commentCount }: FeedItemProps) {
   const toggleReaction = useToggleReaction()
 
   const handleGudoPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     toggleReaction.mutate(log.id)
   }
 

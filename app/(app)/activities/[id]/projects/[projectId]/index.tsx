@@ -29,7 +29,6 @@ export default function ProjectDetailScreen() {
         <View style={styles.pageHeader}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color="#007AFF" />
-            <Text style={styles.backBtnText}>Back</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.centered}>
@@ -53,6 +52,7 @@ export default function ProjectDetailScreen() {
               await deleteProject.mutateAsync({
                 projectId: project.id,
                 activityId: activityId ?? '',
+                userId: project.user_id,
               })
               router.back()
             } catch (err: any) {
@@ -69,7 +69,6 @@ export default function ProjectDetailScreen() {
       <View style={styles.pageHeader}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#007AFF" />
-          <Text style={styles.backBtnText}>Activity</Text>
         </TouchableOpacity>
       </View>
       <ScrollView style={styles.container}>
@@ -155,10 +154,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 8,
-  },
-  backBtnText: {
-    fontSize: 17,
-    color: '#007AFF',
   },
   container: {
     flex: 1,

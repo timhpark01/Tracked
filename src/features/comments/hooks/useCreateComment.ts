@@ -10,8 +10,9 @@ export function useCreateComment() {
     onSuccess: (data) => {
       // Invalidate comments list
       queryClient.invalidateQueries({ queryKey: ['comments', data.activity_log_id] })
-      // Invalidate comment count
+      // Invalidate comment count (single and batch for feed)
       queryClient.invalidateQueries({ queryKey: ['comment-count', data.activity_log_id] })
+      queryClient.invalidateQueries({ queryKey: ['comment-count-batch'] })
     },
   })
 }

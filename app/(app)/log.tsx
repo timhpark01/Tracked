@@ -23,11 +23,12 @@ import { ControlledTextArea } from '@/components/forms'
 import { DurationPicker } from '@/components/DurationPicker'
 import { pickImage } from '@/lib/storage'
 import { useActivities } from '@/features/activities'
-import { useAllUserProjects, useRecentProjects } from '@/features/projects'
+import { useAllUserProjects } from '@/features/projects'
 import { useCreateLog } from '@/features/logs'
 import type { Database } from '@/types/database'
 
 type Project = Database['public']['Tables']['projects']['Row']
+type Activity = Database['public']['Tables']['activities']['Row']
 
 const logSchema = z.object({
   note: z.string().max(1000, 'Note must be 1000 characters or less').optional(),
@@ -39,19 +40,32 @@ export default function LogScreen() {
   const { projectId, activityId } = useLocalSearchParams<{ projectId?: string; activityId?: string }>()
   const { data: activities, isLoading: activitiesLoading } = useActivities()
   const allProjectsQuery = useAllUserProjects()
-  const recentProjectsQuery = useRecentProjects(5)
   const createLog = useCreateLog()
 
   // Extract and properly type the data
   const allProjects: Project[] = allProjectsQuery.data ?? []
   const projectsLoading = allProjectsQuery.isLoading
-  const recentProjects: Project[] = recentProjectsQuery.data ?? []
 
-  // Find pre-selected project from URL param
+  // Find pre-selected activity and project from URL params
+  const preSelectedActivity = useMemo((): Activity | null => {
+    if (activityId && activities) {
+      return activities.find((a) => a.id === activityId) ?? null
+    }
+    // If projectId is provided, derive activity from the project
+    if (projectId && allProjects.length > 0 && activities) {
+      const project = allProjects.find((p) => p.id === projectId)
+      if (project) {
+        return activities.find((a) => a.id === project.activity_id) ?? null
+      }
+    }
+    return null
+  }, [activityId, projectId, activities, allProjects])
+
   const preSelectedProject = projectId
     ? allProjects.find((p) => p.id === projectId) ?? null
     : null
 
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [date, setDate] = useState(new Date())
   const [showDatePicker, setShowDatePicker] = useState(false)
@@ -60,23 +74,23 @@ export default function LogScreen() {
   const [hours, setHours] = useState(0)
   const [minutes, setMinutes] = useState(30)
 
-  // Use pre-selected project when available
+  // Use pre-selected values when available
+  const effectiveActivity = selectedActivity ?? preSelectedActivity
   const effectiveProject = selectedProject ?? preSelectedProject
 
-  // Group projects by activity
-  type ActivityWithProjects = {
-    activity: Database['public']['Tables']['activities']['Row']
-    projects: Project[]
+  // Filter projects by selected activity
+  const filteredProjects = useMemo((): Project[] => {
+    if (!effectiveActivity || !allProjects) return []
+    return allProjects.filter((p) => p.activity_id === effectiveActivity.id)
+  }, [effectiveActivity, allProjects])
+
+  // Handle activity selection - clears project when activity changes
+  const handleActivitySelect = (activity: Activity) => {
+    if (selectedActivity?.id !== activity.id) {
+      setSelectedProject(null)
+    }
+    setSelectedActivity(activity)
   }
-
-  const projectsByActivity = useMemo((): ActivityWithProjects[] => {
-    if (!allProjects || !activities) return []
-
-    return activities.map((activity) => ({
-      activity,
-      projects: allProjects.filter((p) => p.activity_id === activity.id),
-    })).filter((group) => group.projects.length > 0)
-  }, [allProjects, activities])
 
   const { control, handleSubmit, reset } = useForm<LogFormData>({
     resolver: zodResolver(logSchema),
@@ -180,42 +194,49 @@ export default function LogScreen() {
           <Text style={styles.label}>Project</Text>
           {activitiesLoading || projectsLoading ? (
             <ActivityIndicator size="small" color="#007AFF" />
-          ) : projectsByActivity.length > 0 ? (
+          ) : activities && activities.length > 0 ? (
             <View style={styles.projectPickerContainer}>
-              {/* Recent Projects - show when no project is selected */}
-              {recentProjects.length > 0 && !effectiveProject && (
-                <View style={styles.recentSection}>
-                  <Text style={styles.subLabel}>Recent</Text>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.projectList}
-                  >
-                    {recentProjects.map((proj) => (
-                      <Pressable
-                        key={proj.id}
-                        style={[styles.projectChip, styles.recentChip]}
-                        onPress={() => setSelectedProject(proj)}
+              {/* Step 1: Activity Selection */}
+              <View style={styles.activityGroup}>
+                <Text style={styles.subLabel}>Activity</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.projectList}
+                >
+                  {activities?.map((activity) => (
+                    <Pressable
+                      key={activity.id}
+                      style={[
+                        styles.projectChip,
+                        effectiveActivity?.id === activity.id && styles.projectChipSelected,
+                      ]}
+                      onPress={() => handleActivitySelect(activity)}
+                    >
+                      <Text
+                        style={[
+                          styles.projectChipText,
+                          effectiveActivity?.id === activity.id && styles.projectChipTextSelected,
+                        ]}
+                        numberOfLines={1}
                       >
-                        <Text style={styles.projectChipText} numberOfLines={1}>
-                          {proj.name}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
+                        {activity.name}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
 
-              {/* Projects grouped by Activity */}
-              {projectsByActivity.map(({ activity, projects }) => (
-                <View key={activity.id} style={styles.activityGroup}>
-                  <Text style={styles.activityGroupTitle}>{activity.name}</Text>
+              {/* Step 2: Project Selection (shown after activity is selected) */}
+              {effectiveActivity && filteredProjects.length > 0 && (
+                <View style={styles.activityGroup}>
+                  <Text style={styles.subLabel}>Project</Text>
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.projectList}
                   >
-                    {projects.map((project) => (
+                    {filteredProjects.map((project) => (
                       <Pressable
                         key={project.id}
                         style={[
@@ -237,7 +258,7 @@ export default function LogScreen() {
                     ))}
                   </ScrollView>
                 </View>
-              ))}
+              )}
             </View>
           ) : (
             <Text style={styles.emptyText}>No projects yet. Create one first!</Text>
@@ -415,18 +436,8 @@ const styles = StyleSheet.create({
   projectPickerContainer: {
     gap: 16,
   },
-  recentSection: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-    paddingBottom: 16,
-  },
   activityGroup: {
     gap: 8,
-  },
-  activityGroupTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#6b7280',
   },
   projectList: {
     gap: 8,
@@ -440,10 +451,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
     maxWidth: 200,
-  },
-  recentChip: {
-    backgroundColor: '#fef3c7',
-    borderColor: '#fcd34d',
   },
   projectChipSelected: {
     backgroundColor: '#007AFF',

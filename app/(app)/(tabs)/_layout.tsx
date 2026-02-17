@@ -25,13 +25,6 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="activities"
-          options={{
-            href: null, // Hide from tab bar but keep routes accessible
-            headerShown: false, // Stack handles its own header
-          }}
-        />
-        <Tabs.Screen
           name="search"
           options={{
             title: 'Search',

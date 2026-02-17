@@ -1,14 +1,15 @@
-// app/(app)/(tabs)/activities/[id]/projects/[projectId]/edit.tsx
-import { View, Text, StyleSheet, Alert, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
+// app/(app)/activities/[id]/edit.tsx
+import { View, ActivityIndicator, StyleSheet, Alert, ScrollView, Text, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useProject, useUpdateProject, ProjectForm } from '@/features/projects'
+import { useActivity, useUpdateActivity } from '@/features/activities'
+import { ActivityForm } from '@/features/activities/components/ActivityForm'
 
-export default function EditProjectScreen() {
-  const { projectId } = useLocalSearchParams<{ id: string; projectId: string }>()
-  const { data: project, isLoading, error } = useProject(projectId ?? '')
-  const updateProject = useUpdateProject()
+export default function EditActivityScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>()
+  const { data: activity, isLoading, error } = useActivity(id ?? '')
+  const updateActivity = useUpdateActivity()
 
   if (isLoading) {
     return (
@@ -20,57 +21,59 @@ export default function EditProjectScreen() {
     )
   }
 
-  if (error || !project) {
+  if (error || !activity) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
             <Ionicons name="close" size={24} color="#6b7280" />
           </TouchableOpacity>
-          <Text style={styles.title}>Edit Project</Text>
+          <Text style={styles.title}>Edit Activity</Text>
           <View style={styles.placeholder} />
         </View>
         <View style={styles.centered}>
-          <Text style={styles.errorText}>Project not found</Text>
+          <Text style={styles.errorText}>Activity not found</Text>
         </View>
       </SafeAreaView>
     )
   }
 
-  const handleSubmit = async (data: { name: string; description?: string | null }) => {
+  const handleSubmit = async (data: {
+    name: string
+    description?: string | null
+    category?: string | null
+  }) => {
     try {
-      await updateProject.mutateAsync({
-        projectId: project.id,
+      await updateActivity.mutateAsync({
+        activityId: activity.id,
         updates: {
           name: data.name,
           description: data.description,
+          category: data.category,
         },
       })
       router.back()
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to update project')
+      Alert.alert('Error', error.message || 'Failed to update activity')
     }
   }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
-          <Ionicons name="close" size={24} color="#6b7280" />
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={24} color="#007AFF" />
         </TouchableOpacity>
-        <Text style={styles.title}>Edit Project</Text>
+        <Text style={styles.title}>Edit Activity</Text>
         <View style={styles.placeholder} />
       </View>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ProjectForm
-          initialData={project}
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+        <ActivityForm
+          initialData={activity}
           onSubmit={handleSubmit}
-          isLoading={updateProject.isPending}
+          isLoading={updateActivity.isPending}
         />
-      </KeyboardAvoidingView>
+      </ScrollView>
     </SafeAreaView>
   )
 }
@@ -89,7 +92,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
-  closeButton: {
+  backButton: {
     padding: 4,
   },
   title: {

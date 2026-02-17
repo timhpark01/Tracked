@@ -45,6 +45,7 @@ export function useCreateLog() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['logs', variables.projectId] })
       queryClient.invalidateQueries({ queryKey: ['projects', variables.activityId] })
+      queryClient.invalidateQueries({ queryKey: ['activity-logs', variables.activityId] })
       queryClient.invalidateQueries({ queryKey: ['recent-projects', user?.id] })
       // Invalidate feed so followers see the new log
       queryClient.invalidateQueries({ queryKey: ['feed'] })

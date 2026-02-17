@@ -66,7 +66,7 @@ export default function ActivityDetailScreen() {
     return (
       <SafeAreaView style={styles.centered}>
         <Text style={styles.errorText}>Activity not found</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/add')}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -85,7 +85,7 @@ export default function ActivityDetailScreen() {
           onPress: async () => {
             try {
               await deleteActivity.mutateAsync(activity.id)
-              router.replace('/add')
+              router.back()
             } catch (err: any) {
               Alert.alert('Error', err.message || 'Failed to delete activity')
             }
@@ -118,9 +118,8 @@ export default function ActivityDetailScreen() {
     <SafeAreaView style={styles.safeArea}>
       {/* Page Header */}
       <View style={styles.pageHeader}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/add')}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#007AFF" />
-          <Text style={styles.backBtnText}>Activities</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.editBtn}
@@ -146,7 +145,6 @@ export default function ActivityDetailScreen() {
 
         {/* Analytics Section */}
         <View style={styles.analyticsSection}>
-          <Text style={styles.sectionTitle}>Analytics</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>{analytics.totalLogs}</Text>
@@ -260,10 +258,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 8,
-  },
-  backBtnText: {
-    fontSize: 17,
-    color: '#007AFF',
   },
   editBtn: {
     padding: 12,

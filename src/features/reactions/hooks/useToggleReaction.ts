@@ -33,6 +33,8 @@ export function useToggleReaction() {
     onSettled: (_data, _error, activityLogId) => {
       // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['reactions', activityLogId] })
+      // Also invalidate batch queries used by feed
+      queryClient.invalidateQueries({ queryKey: ['reactions-batch'] })
     },
   })
 }

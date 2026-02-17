@@ -30,8 +30,8 @@ export default function NewProjectScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
-          <Ionicons name="close" size={24} color="#6b7280" />
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={24} color="#007AFF" />
         </TouchableOpacity>
         <Text style={styles.title}>New Project</Text>
         <View style={styles.placeholder} />
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
-  closeButton: {
+  backButton: {
     padding: 4,
   },
   title: {

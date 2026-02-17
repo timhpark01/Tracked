@@ -11,8 +11,9 @@ export function useDeleteComment() {
     onSuccess: (_data, variables) => {
       // Invalidate comments list
       queryClient.invalidateQueries({ queryKey: ['comments', variables.activityLogId] })
-      // Invalidate comment count
+      // Invalidate comment count (single and batch for feed)
       queryClient.invalidateQueries({ queryKey: ['comment-count', variables.activityLogId] })
+      queryClient.invalidateQueries({ queryKey: ['comment-count-batch'] })
     },
   })
 }
