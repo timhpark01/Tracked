@@ -1,7 +1,9 @@
 // src/features/auth/services/auth.service.ts
 import { supabase } from '@/lib/supabase'
 import * as WebBrowser from 'expo-web-browser'
+import * as AppleAuthentication from 'expo-apple-authentication'
 import { makeRedirectUri } from 'expo-auth-session'
+import { Platform } from 'react-native'
 
 export async function signUp(email: string, password: string) {
   const { data, error } = await supabase.auth.signUp({
@@ -229,4 +231,78 @@ export async function signInWithGoogle() {
     throw new Error('Google sign-in was cancelled')
   }
   throw new Error('Google sign-in failed')
+}
+
+// ============================================================================
+// Apple Sign In Authentication (iOS only)
+// ============================================================================
+
+/**
+ * Check if Apple Sign In is available on this device
+ * Only available on iOS 13+
+ */
+export async function isAppleSignInAvailable(): Promise<boolean> {
+  if (Platform.OS !== 'ios') {
+    return false
+  }
+  return await AppleAuthentication.isAvailableAsync()
+}
+
+/**
+ * Sign in with Apple (iOS only)
+ * Uses native Apple Sign In and exchanges the credential with Supabase
+ */
+export async function signInWithApple() {
+  // Check availability first
+  const isAvailable = await isAppleSignInAvailable()
+  if (!isAvailable) {
+    throw new Error('Apple Sign In is not available on this device')
+  }
+
+  try {
+    // Request Apple credential with required scopes
+    const credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+    })
+
+    // The identityToken is a JWT that Supabase can verify
+    if (!credential.identityToken) {
+      throw new Error('No identity token returned from Apple')
+    }
+
+    // Sign in to Supabase using the Apple ID token
+    const { data, error } = await supabase.auth.signInWithIdToken({
+      provider: 'apple',
+      token: credential.identityToken,
+    })
+
+    if (error) {
+      throw error
+    }
+
+    if (!data.session || !data.user) {
+      throw new Error('No session returned from Supabase')
+    }
+
+    // Small delay to allow session to persist (matching Google pattern)
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Verify the session is working
+    const { data: { user: verifiedUser }, error: verifyError } = await supabase.auth.getUser()
+
+    if (verifyError || !verifiedUser) {
+      throw new Error('Session verification failed after Apple Sign In')
+    }
+
+    return { session: data.session, user: verifiedUser }
+  } catch (error: any) {
+    // Handle specific Apple Sign In errors
+    if (error.code === 'ERR_REQUEST_CANCELED') {
+      throw new Error('Apple sign-in was cancelled')
+    }
+    throw error
+  }
 }

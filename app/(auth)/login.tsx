@@ -1,10 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native'
 import { Link } from 'expo-router'
-import { signInWithGoogle } from '@/features/auth/services/auth.service'
+import * as AppleAuthentication from 'expo-apple-authentication'
+import { signInWithGoogle, signInWithApple, isAppleSignInAvailable } from '@/features/auth'
 
 export default function LoginScreen() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [isAppleLoading, setIsAppleLoading] = useState(false)
+  const [appleAvailable, setAppleAvailable] = useState(false)
+
+  // Check Apple Sign In availability on mount
+  useEffect(() => {
+    isAppleSignInAvailable().then(setAppleAvailable)
+  }, [])
 
   async function handleGoogleSignIn() {
     try {
@@ -20,6 +28,22 @@ export default function LoginScreen() {
     }
   }
 
+  async function handleAppleSignIn() {
+    try {
+      setIsAppleLoading(true)
+      await signInWithApple()
+      // Navigation handled automatically by layout when auth state updates
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to sign in with Apple'
+      if (message !== 'Apple sign-in was cancelled') {
+        Alert.alert('Sign In Error', message)
+      }
+      setIsAppleLoading(false)
+    }
+  }
+
+  const isLoading = isGoogleLoading || isAppleLoading
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome to Gudos</Text>
@@ -28,7 +52,7 @@ export default function LoginScreen() {
       <TouchableOpacity
         style={styles.googleButton}
         onPress={handleGoogleSignIn}
-        disabled={isGoogleLoading}
+        disabled={isLoading}
       >
         {isGoogleLoading ? (
           <ActivityIndicator color="#333" />
@@ -39,6 +63,16 @@ export default function LoginScreen() {
           </>
         )}
       </TouchableOpacity>
+
+      {appleAvailable && (
+        <AppleAuthentication.AppleAuthenticationButton
+          buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+          buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+          cornerRadius={8}
+          style={styles.appleButton}
+          onPress={handleAppleSignIn}
+        />
+      )}
 
       <View style={styles.dividerContainer}>
         <View style={styles.divider} />
@@ -89,6 +123,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ddd',
+    marginBottom: 12,
+  },
+  appleButton: {
+    width: '100%',
+    height: 50,
     marginBottom: 24,
   },
   googleIcon: {

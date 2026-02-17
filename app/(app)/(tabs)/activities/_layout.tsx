@@ -9,7 +9,8 @@ export default function ActivitiesLayout() {
       <Stack.Screen name="[id]/index" />
       <Stack.Screen name="[id]/edit" options={{ presentation: 'modal' }} />
       <Stack.Screen name="[id]/projects/new" options={{ presentation: 'modal' }} />
-      <Stack.Screen name="[id]/projects/[projectId]" />
+      <Stack.Screen name="[id]/projects/[projectId]/index" />
+      <Stack.Screen name="[id]/projects/[projectId]/edit" options={{ presentation: 'modal' }} />
     </Stack>
   )
 }

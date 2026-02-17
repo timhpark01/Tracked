@@ -10,6 +10,9 @@ export {
   completePhoneSignup,
   checkUsernameAvailable,
   checkProfileComplete,
+  signInWithGoogle,
+  signInWithApple,
+  isAppleSignInAvailable,
 } from './services/auth.service'
 export {
   phoneSchema,
