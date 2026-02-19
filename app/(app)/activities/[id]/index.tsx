@@ -121,23 +121,27 @@ export default function ActivityDetailScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#007AFF" />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.editBtn}
-          onPress={() => router.push(`/activities/${activity.id}/edit`)}
-        >
-          <Ionicons name="pencil" size={20} color="#007AFF" />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.headerBtn}
+            onPress={() => router.push(`/activities/${activity.id}/edit`)}
+          >
+            <Ionicons name="pencil" size={20} color="#007AFF" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerBtn}
+            onPress={handleDelete}
+            disabled={deleteActivity.isPending}
+          >
+            <Ionicons name="trash-outline" size={20} color="#ef4444" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.container}>
         {/* Activity Info */}
         <View style={styles.header}>
           <Text style={styles.name}>{activity.name}</Text>
-          {activity.category && (
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>{activity.category}</Text>
-            </View>
-          )}
           {activity.description && (
             <Text style={styles.description}>{activity.description}</Text>
           )}
@@ -221,19 +225,6 @@ export default function ActivityDetailScreen() {
           )}
         </View>
 
-        {/* Danger Zone */}
-        <View style={styles.dangerSection}>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDelete}
-            disabled={deleteActivity.isPending}
-          >
-            <Ionicons name="trash-outline" size={18} color="#ef4444" />
-            <Text style={styles.deleteButtonText}>
-              {deleteActivity.isPending ? 'Deleting...' : 'Delete Activity'}
-            </Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   )
@@ -259,7 +250,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 8,
   },
-  editBtn: {
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  headerBtn: {
     padding: 12,
   },
   container: {
@@ -299,19 +295,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#111827',
-  },
-  categoryBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginTop: 8,
-  },
-  categoryText: {
-    fontSize: 13,
-    color: '#6b7280',
-    fontWeight: '500',
   },
   description: {
     fontSize: 15,
@@ -432,26 +415,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9ca3af',
     marginTop: 4,
-  },
-  dangerSection: {
-    padding: 20,
-    marginTop: 12,
-    marginBottom: 32,
-  },
-  deleteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    backgroundColor: '#fef2f2',
-  },
-  deleteButtonText: {
-    color: '#ef4444',
-    fontSize: 15,
-    fontWeight: '600',
   },
 })

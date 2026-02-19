@@ -3,47 +3,104 @@ import { View, TouchableOpacity, StyleSheet, ActivityIndicator, Text } from 'rea
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useState, useEffect } from 'react'
 import { ControlledInput, ControlledTextArea } from '@/components/forms'
+import { FieldEditor, type FieldDefinition } from './FieldEditor'
 import type { Database } from '@/types/database'
+import type { TemplateWithFields } from '@/types/fields'
 
 type Activity = Database['public']['Tables']['activities']['Row']
 
 const activitySchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or less'),
   description: z.string().max(500, 'Description must be 500 characters or less').optional(),
-  category: z.string().max(50, 'Category must be 50 characters or less').optional(),
 })
 
 type ActivityFormData = z.infer<typeof activitySchema>
 
 interface ActivityFormProps {
   initialData?: Partial<Activity>
+  initialFields?: FieldDefinition[]
+  template?: TemplateWithFields | null
   onSubmit: (data: {
     name: string
     description?: string | null
-    category?: string | null
+    fields: FieldDefinition[]
   }) => void
   isLoading?: boolean
 }
 
-export function ActivityForm({ initialData, onSubmit, isLoading = false }: ActivityFormProps) {
+export function ActivityForm({
+  initialData,
+  initialFields,
+  template,
+  onSubmit,
+  isLoading = false,
+}: ActivityFormProps) {
+  const [fields, setFields] = useState<FieldDefinition[]>(() => {
+    if (initialFields) return initialFields
+    if (template) {
+      return template.fields.map((f) => ({
+        id: f.id,
+        name: f.name,
+        fieldType: f.field_type,
+        unit: f.unit,
+        isPrimary: f.is_primary,
+      }))
+    }
+    // Default to a single Duration field
+    return [
+      {
+        id: 'default-duration',
+        name: 'Duration',
+        fieldType: 'time' as const,
+        unit: 'min',
+        isPrimary: true,
+      },
+    ]
+  })
+
   const {
     control,
     handleSubmit,
+    setValue,
   } = useForm<ActivityFormData>({
     resolver: zodResolver(activitySchema),
     defaultValues: {
-      name: initialData?.name ?? '',
-      description: initialData?.description ?? '',
-      category: initialData?.category ?? '',
+      name: template?.name ?? initialData?.name ?? '',
+      description: template?.description ?? initialData?.description ?? '',
     },
   })
+
+  // Update fields when initialFields loads (for edit mode)
+  useEffect(() => {
+    if (initialFields && initialFields.length > 0) {
+      setFields(initialFields)
+    }
+  }, [initialFields])
+
+  // Update form when template changes
+  useEffect(() => {
+    if (template) {
+      setValue('name', template.name)
+      setValue('description', template.description ?? '')
+      setFields(
+        template.fields.map((f) => ({
+          id: f.id,
+          name: f.name,
+          fieldType: f.field_type,
+          unit: f.unit,
+          isPrimary: f.is_primary,
+        }))
+      )
+    }
+  }, [template, setValue])
 
   const handleFormSubmit = handleSubmit((data) => {
     onSubmit({
       name: data.name,
       description: data.description || null,
-      category: data.category || null,
+      fields,
     })
   })
 
@@ -57,14 +114,6 @@ export function ActivityForm({ initialData, onSubmit, isLoading = false }: Activ
         style={styles.field}
       />
 
-      <ControlledInput
-        control={control}
-        name="category"
-        label="Category"
-        placeholder="e.g., Fitness, Learning, Creative"
-        style={styles.field}
-      />
-
       <ControlledTextArea
         control={control}
         name="description"
@@ -72,6 +121,8 @@ export function ActivityForm({ initialData, onSubmit, isLoading = false }: Activ
         placeholder="What is this activity about?"
         style={styles.field}
       />
+
+      <FieldEditor fields={fields} onChange={setFields} />
 
       <TouchableOpacity
         style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}

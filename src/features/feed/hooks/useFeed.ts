@@ -1,19 +1,19 @@
 // src/features/feed/hooks/useFeed.ts
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useAuth } from '@/features/auth'
-import { getFeedLogs, getPublicFeedLogs, type FeedType } from '../services/feed.service'
+import { getFeedLogs, getPublicFeedLogs, getPersonalFeedLogs, type FeedType } from '../services/feed.service'
 
 const PAGE_SIZE = 20
 
 /**
  * Hook for paginated activity feed using infinite scroll
- * @param feedType - 'public' for all users, 'following' for followed users only
+ * @param feedType - 'public' for all users, 'following' for followed users only, 'personal' for current user's logs
  */
 export function useFeed(feedType: FeedType = 'following') {
   const { user, loading: authLoading } = useAuth()
 
   // For public feed, only need auth to not be loading
-  // For following feed, need auth done AND a valid user with ID
+  // For following/personal feed, need auth done AND a valid user with ID
   const userId = user?.id
   const isEnabled = feedType === 'public'
     ? !authLoading
@@ -27,6 +27,9 @@ export function useFeed(feedType: FeedType = 'following') {
 
       if (feedType === 'public') {
         return await getPublicFeedLogs(start, end)
+      }
+      if (feedType === 'personal') {
+        return await getPersonalFeedLogs(userId!, start, end)
       }
       // userId is guaranteed to exist here because of enabled check
       return await getFeedLogs(userId!, start, end)

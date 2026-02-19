@@ -27,7 +27,6 @@ export function useCreateActivity() {
         user_id: newActivity.user_id,
         name: newActivity.name,
         description: newActivity.description ?? null,
-        category: newActivity.category ?? null,
         created_at: new Date().toISOString(),
       }
 

@@ -23,12 +23,6 @@ export function ActivityCard({ activity, onPress }: ActivityCardProps) {
           {activity.description}
         </Text>
       )}
-
-      {activity.category && (
-        <View style={styles.categoryContainer}>
-          <Text style={styles.categoryText}>{activity.category}</Text>
-        </View>
-      )}
     </TouchableOpacity>
   )
 }
@@ -54,13 +48,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6b7280',
     marginBottom: 8,
-  },
-  categoryContainer: {
-    marginTop: 8,
-  },
-  categoryText: {
-    fontSize: 12,
-    color: '#9ca3af',
-    fontStyle: 'italic',
   },
 })

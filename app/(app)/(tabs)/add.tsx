@@ -74,11 +74,6 @@ export default function AddEntryScreen() {
                   </Text>
                 )}
                 <View style={styles.cardMeta}>
-                  {activity.category && (
-                    <View style={styles.categoryBadge}>
-                      <Text style={styles.categoryText}>{activity.category}</Text>
-                    </View>
-                  )}
                   <Text style={styles.projectCount}>
                     {projectCount} {projectCount === 1 ? 'project' : 'projects'}
                   </Text>
@@ -161,17 +156,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-  },
-  categoryBadge: {
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  categoryText: {
-    fontSize: 12,
-    color: '#6b7280',
-    fontWeight: '500',
   },
   projectCount: {
     fontSize: 13,

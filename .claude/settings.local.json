@@ -12,7 +12,8 @@
       "Bash(grep:*)",
       "Bash(ls:*)",
       "Bash(cat:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(npm uninstall:*)"
     ]
   }
 }

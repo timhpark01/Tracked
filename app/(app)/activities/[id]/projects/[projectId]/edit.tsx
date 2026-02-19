@@ -24,8 +24,8 @@ export default function EditProjectScreen() {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
-            <Ionicons name="close" size={24} color="#6b7280" />
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={24} color="#007AFF" />
           </TouchableOpacity>
           <Text style={styles.title}>Edit Project</Text>
           <View style={styles.placeholder} />

@@ -1,9 +1,12 @@
 // src/features/logs/index.ts
 export { useLogs } from './hooks/useLogs'
+export { useLog } from './hooks/useLog'
 export { useCreateLog } from './hooks/useCreateLog'
+export { useUpdateLog } from './hooks/useUpdateLog'
 export { useDeleteLog } from './hooks/useDeleteLog'
 export * from './services/logs.service'
 export { LogForm } from './components/LogForm'
+export { DynamicLogForm } from './components/DynamicLogForm'
 export { LogEntry } from './components/LogEntry'
 export { LogHistory } from './components/LogHistory'
 export { LogProgressModal } from './components/LogProgressModal'

@@ -1,4 +1,5 @@
 // app/(app)/profile/index.tsx
+import { useState } from 'react'
 import {
   View,
   Text,
@@ -7,25 +8,29 @@ import {
   Pressable,
   StyleSheet,
   ActivityIndicator,
-  ScrollView,
 } from 'react-native'
 import { router } from 'expo-router'
-import { useMyProfile } from '@/features/profiles'
+import {
+  useMyProfile,
+  ProfileTabs,
+  SkillsTab,
+  FeedTab,
+  ActivitiesTab,
+  type TabKey,
+} from '@/features/profiles'
 import { useFollowers, useFollowing } from '@/features/social'
+import { useGroups } from '@/features/groups'
 import { useAuth } from '@/features/auth'
-import { useActivities } from '@/features/activities'
-import { ActivityCard } from '@/features/activities/components/ActivityCard'
 
 export default function ProfileScreen() {
   const { user } = useAuth()
   const { data: profile, isLoading, error } = useMyProfile()
+  const [activeTab, setActiveTab] = useState<TabKey>('skills')
 
-  // Follower/following counts
+  // Follower/following/groups counts
   const { data: followers } = useFollowers(user?.id || '')
   const { data: following } = useFollowing(user?.id || '')
-
-  // Activities
-  const { data: activities } = useActivities()
+  const { data: groups } = useGroups()
 
   if (isLoading) {
     return (
@@ -68,9 +73,21 @@ export default function ProfileScreen() {
     )
   }
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'skills':
+        return <SkillsTab />
+      case 'feed':
+        return <FeedTab />
+      case 'activities':
+        return <ActivitiesTab />
+    }
+  }
+
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      {/* Profile Header */}
+      <View style={styles.header}>
         {/* Avatar */}
         <View style={styles.avatarSection}>
           {profile.avatar_url ? (
@@ -84,49 +101,57 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Username */}
-        <Text style={styles.username}>@{profile.username}</Text>
+        {/* Username and Stats */}
+        <View style={styles.infoSection}>
+          <Text style={styles.username}>@{profile.username}</Text>
 
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <Pressable
-            style={styles.statItem}
-            onPress={() => router.push(`/followers/${user?.id}`)}
+          {/* Stats Row */}
+          <View style={styles.statsRow}>
+            <Pressable
+              style={styles.statItem}
+              onPress={() => router.push(`/followers/${user?.id}`)}
+            >
+              <Text style={styles.statNumber}>{followers?.length ?? 0}</Text>
+              <Text style={styles.statLabel}>Followers</Text>
+            </Pressable>
+            <Pressable
+              style={styles.statItem}
+              onPress={() => router.push(`/following/${user?.id}`)}
+            >
+              <Text style={styles.statNumber}>{following?.length ?? 0}</Text>
+              <Text style={styles.statLabel}>Following</Text>
+            </Pressable>
+            <Pressable
+              style={styles.statItem}
+              onPress={() => router.push('/groups')}
+            >
+              <Text style={styles.statNumber}>{groups?.length ?? 0}</Text>
+              <Text style={styles.statLabel}>Groups</Text>
+            </Pressable>
+          </View>
+
+          {/* Edit button */}
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => router.push('/profile/edit')}
           >
-            <Text style={styles.statNumber}>{followers?.length ?? 0}</Text>
-            <Text style={styles.statLabel}>Followers</Text>
-          </Pressable>
-          <Pressable
-            style={styles.statItem}
-            onPress={() => router.push(`/following/${user?.id}`)}
-          >
-            <Text style={styles.statNumber}>{following?.length ?? 0}</Text>
-            <Text style={styles.statLabel}>Following</Text>
-          </Pressable>
+            <Text style={styles.editButtonText}>Edit Profile</Text>
+          </TouchableOpacity>
         </View>
+      </View>
 
-        {/* Bio */}
-        {profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
-
-        {/* Edit button */}
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => router.push('/profile/edit')}
-        >
-          <Text style={styles.editButtonText}>Edit Profile</Text>
-        </TouchableOpacity>
-
-        {/* Activities */}
-        <View style={styles.activitiesSection}>
-          {activities?.map((activity) => (
-            <ActivityCard
-              key={activity.id}
-              activity={activity}
-              onPress={() => router.push(`/profile/activity/${activity.id}`)}
-            />
-          ))}
+      {/* Bio */}
+      {profile.bio && (
+        <View style={styles.bioSection}>
+          <Text style={styles.bio}>{profile.bio}</Text>
         </View>
-      </ScrollView>
+      )}
+
+      {/* Tabs */}
+      <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Tab Content */}
+      <View style={styles.tabContent}>{renderTabContent()}</View>
     </View>
   )
 }
@@ -135,11 +160,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    alignItems: 'center',
   },
   centered: {
     flex: 1,
@@ -197,75 +217,86 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  // Profile view
-  avatarSection: {
-    marginBottom: 16,
+  // Header
+  header: {
+    flexDirection: 'row',
+    padding: 16,
+    paddingBottom: 12,
+    gap: 16,
   },
+  avatarSection: {},
   avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: '#e5e7eb',
   },
   avatarPlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: '#e5e7eb',
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitial: {
-    fontSize: 48,
+    fontSize: 32,
     color: '#6b7280',
     fontWeight: '600',
   },
+  infoSection: {
+    flex: 1,
+    justifyContent: 'center',
+  },
   username: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#111827',
     marginBottom: 8,
   },
-  bio: {
-    fontSize: 16,
-    color: '#4b5563',
-    textAlign: 'center',
-    marginBottom: 0,
-    lineHeight: 24,
-  },
-  editButton: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 8,
-  },
-  editButtonText: {
-    color: '#374151',
-    fontSize: 14,
-    fontWeight: '500',
-  },
   // Stats row
   statsRow: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: 12,
+    gap: 24,
   },
   statItem: {
     alignItems: 'center',
-    marginHorizontal: 16,
   },
   statNumber: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#111827',
   },
   statLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#6b7280',
   },
-  // Activities section
-  activitiesSection: {
-    width: '100%',
-    marginTop: 24,
+  editButton: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  editButtonText: {
+    color: '#374151',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  // Bio
+  bioSection: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  bio: {
+    fontSize: 14,
+    color: '#4b5563',
+    lineHeight: 20,
+  },
+  // Tab content
+  tabContent: {
+    flex: 1,
   },
 })

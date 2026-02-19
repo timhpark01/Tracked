@@ -1,6 +1,8 @@
 // app/(app)/profile/activity/[id].tsx
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert, ScrollView } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { useActivity, useDeleteActivity } from '@/features/activities'
 import { useProjects, ProjectList } from '@/features/projects'
 
@@ -12,20 +14,20 @@ export default function ProfileActivityDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
+      <SafeAreaView style={styles.centered}>
         <ActivityIndicator size="large" color="#007AFF" />
-      </View>
+      </SafeAreaView>
     )
   }
 
   if (error || !activity) {
     return (
-      <View style={styles.centered}>
+      <SafeAreaView style={styles.centered}>
         <Text style={styles.errorText}>Activity not found</Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>Go Back</Text>
         </TouchableOpacity>
-      </View>
+      </SafeAreaView>
     )
   }
 
@@ -52,52 +54,38 @@ export default function ProfileActivityDetailScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.name}>{activity.name}</Text>
-      </View>
-
-      {activity.description && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.description}>{activity.description}</Text>
-        </View>
-      )}
-
-      {activity.category && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Category</Text>
-          <Text style={styles.categoryText}>{activity.category}</Text>
-        </View>
-      )}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Created</Text>
-        <Text style={styles.dateText}>
-          {new Date(activity.created_at).toLocaleDateString()}
-        </Text>
-      </View>
-
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => router.push(`/activities/${activity.id}/edit`)}
-        >
-          <Text style={styles.editButtonText}>Edit Activity</Text>
+    <SafeAreaView style={styles.safeArea}>
+      {/* Page Header */}
+      <View style={styles.pageHeader}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={24} color="#007AFF" />
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={handleDelete}
-          disabled={deleteActivity.isPending}
-        >
-          <Text style={styles.deleteButtonText}>
-            {deleteActivity.isPending ? 'Deleting...' : 'Delete Activity'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.headerBtn}
+            onPress={() => router.push(`/activities/${activity.id}/edit`)}
+          >
+            <Ionicons name="pencil" size={20} color="#007AFF" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerBtn}
+            onPress={handleDelete}
+            disabled={deleteActivity.isPending}
+          >
+            <Ionicons name="trash-outline" size={20} color="#ef4444" />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <View style={styles.projectsSection}>
+      <ScrollView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.name}>{activity.name}</Text>
+          {activity.description && (
+            <Text style={styles.description}>{activity.description}</Text>
+          )}
+        </View>
+
+        <View style={styles.projectsSection}>
         <View style={styles.projectsHeader}>
           <Text style={styles.projectsTitle}>Projects</Text>
           <TouchableOpacity
@@ -118,21 +106,50 @@ export default function ProfileActivityDetailScreen() {
             emptyMessage="No projects yet. Create one to start logging!"
           />
         )}
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  pageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  headerBtn: {
+    padding: 12,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+    backgroundColor: '#f9fafb',
   },
   errorText: {
     fontSize: 18,
@@ -143,7 +160,7 @@ const styles = StyleSheet.create({
   backButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#fff',
     borderRadius: 8,
   },
   backButtonText: {
@@ -152,76 +169,30 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   header: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    backgroundColor: '#fff',
+    padding: 20,
+    paddingTop: 16,
   },
   name: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-  },
-  section: {
-    padding: 16,
-    paddingHorizontal: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#9ca3af',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 4,
+    color: '#111827',
   },
   description: {
-    fontSize: 16,
-    color: '#374151',
-    lineHeight: 24,
-  },
-  categoryText: {
-    fontSize: 16,
-    color: '#374151',
-  },
-  dateText: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#6b7280',
-  },
-  actions: {
-    padding: 24,
-    gap: 12,
-  },
-  editButton: {
-    backgroundColor: '#f3f4f6',
-    paddingVertical: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  editButtonText: {
-    color: '#374151',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  deleteButton: {
-    paddingVertical: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  deleteButtonText: {
-    color: '#ef4444',
-    fontSize: 16,
-    fontWeight: '600',
+    marginTop: 12,
+    lineHeight: 22,
   },
   projectsSection: {
-    paddingTop: 16,
+    backgroundColor: '#fff',
+    padding: 20,
+    marginTop: 12,
   },
   projectsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
     marginBottom: 12,
   },
   projectsTitle: {

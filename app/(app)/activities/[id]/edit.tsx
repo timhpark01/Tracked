@@ -1,17 +1,29 @@
 // app/(app)/activities/[id]/edit.tsx
-import { View, ActivityIndicator, StyleSheet, Alert, ScrollView, Text, TouchableOpacity } from 'react-native'
+import { View, ActivityIndicator, StyleSheet, Alert, ScrollView, Text, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useActivity, useUpdateActivity } from '@/features/activities'
+import { useActivity, useUpdateActivity, useActivityFields, useReplaceActivityFields } from '@/features/activities'
 import { ActivityForm } from '@/features/activities/components/ActivityForm'
+import type { FieldDefinition } from '@/features/activities/components/FieldEditor'
 
 export default function EditActivityScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { data: activity, isLoading, error } = useActivity(id ?? '')
+  const { data: existingFields, isLoading: fieldsLoading } = useActivityFields(id ?? '')
   const updateActivity = useUpdateActivity()
+  const replaceFields = useReplaceActivityFields()
 
-  if (isLoading) {
+  // Convert DB fields to FieldDefinition format
+  const initialFields: FieldDefinition[] | undefined = existingFields?.map((f) => ({
+    id: f.id,
+    name: f.name,
+    fieldType: f.field_type,
+    unit: f.unit,
+    isPrimary: f.is_primary,
+  }))
+
+  if (isLoading || fieldsLoading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.centered}>
@@ -25,8 +37,8 @@ export default function EditActivityScreen() {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
-            <Ionicons name="close" size={24} color="#6b7280" />
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={24} color="#007AFF" />
           </TouchableOpacity>
           <Text style={styles.title}>Edit Activity</Text>
           <View style={styles.placeholder} />
@@ -41,17 +53,30 @@ export default function EditActivityScreen() {
   const handleSubmit = async (data: {
     name: string
     description?: string | null
-    category?: string | null
+    fields: FieldDefinition[]
   }) => {
     try {
+      // Update activity details
       await updateActivity.mutateAsync({
         activityId: activity.id,
         updates: {
           name: data.name,
           description: data.description,
-          category: data.category,
         },
       })
+
+      // Update fields (uses hook which handles cache invalidation)
+      await replaceFields.mutateAsync({
+        activityId: activity.id,
+        fields: data.fields.map((field, index) => ({
+          name: field.name,
+          field_type: field.fieldType,
+          unit: field.unit,
+          display_order: index,
+          is_primary: field.isPrimary,
+        })),
+      })
+
       router.back()
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to update activity')
@@ -60,20 +85,30 @@ export default function EditActivityScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color="#007AFF" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Edit Activity</Text>
-        <View style={styles.placeholder} />
-      </View>
-      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-        <ActivityForm
-          initialData={activity}
-          onSubmit={handleSubmit}
-          isLoading={updateActivity.isPending}
-        />
-      </ScrollView>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.flex}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={24} color="#007AFF" />
+          </TouchableOpacity>
+          <Text style={styles.title}>Edit Activity</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <ScrollView
+          style={styles.container}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
+        >
+          <ActivityForm
+            initialData={activity}
+            initialFields={initialFields}
+            onSubmit={handleSubmit}
+            isLoading={updateActivity.isPending || replaceFields.isPending}
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
@@ -82,6 +117,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  flex: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -106,6 +144,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   centered: {
     flex: 1,

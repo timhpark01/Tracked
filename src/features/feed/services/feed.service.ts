@@ -22,7 +22,7 @@ export type FeedLog = {
   }
 }
 
-export type FeedType = 'public' | 'following'
+export type FeedType = 'public' | 'following' | 'personal'
 
 const FEED_SELECT_QUERY = `
   id,
@@ -86,6 +86,27 @@ export async function getPublicFeedLogs(start: number, end: number): Promise<Fee
   const { data, error } = await supabase
     .from('activity_logs')
     .select(FEED_SELECT_QUERY)
+    .order('logged_at', { ascending: false })
+    .order('id', { ascending: false })
+    .range(start, end)
+
+  if (error) throw error
+
+  return (data ?? []) as unknown as FeedLog[]
+}
+
+/**
+ * Fetch paginated personal feed logs (current user's own logs)
+ * @param userId - Current user's ID
+ * @param start - Starting index (0-based, inclusive)
+ * @param end - Ending index (0-based, inclusive)
+ * @returns Array of feed logs with nested user/activity data
+ */
+export async function getPersonalFeedLogs(userId: string, start: number, end: number): Promise<FeedLog[]> {
+  const { data, error } = await supabase
+    .from('activity_logs')
+    .select(FEED_SELECT_QUERY)
+    .eq('user_id', userId)
     .order('logged_at', { ascending: false })
     .order('id', { ascending: false })
     .range(start, end)

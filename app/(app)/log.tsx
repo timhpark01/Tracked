@@ -10,9 +10,10 @@ import {
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
+  TextInput,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -20,12 +21,14 @@ import { z } from 'zod'
 import { Ionicons } from '@expo/vector-icons'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { ControlledTextArea } from '@/components/forms'
-import { DurationPicker } from '@/components/DurationPicker'
-import { pickImage } from '@/lib/storage'
-import { useActivities } from '@/features/activities'
+import { pickImage, uploadLogPhoto } from '@/lib/storage'
+import { useActivities, useActivityFields } from '@/features/activities'
 import { useAllUserProjects } from '@/features/projects'
-import { useCreateLog } from '@/features/logs'
+import { createLogWithFields } from '@/features/logs'
+import { useAuth } from '@/features/auth'
+import { useQueryClient, useMutation } from '@tanstack/react-query'
 import type { Database } from '@/types/database'
+import type { FieldValue } from '@/types/fields'
 
 type Project = Database['public']['Tables']['projects']['Row']
 type Activity = Database['public']['Tables']['activities']['Row']
@@ -38,9 +41,10 @@ type LogFormData = z.infer<typeof logSchema>
 
 export default function LogScreen() {
   const { projectId, activityId } = useLocalSearchParams<{ projectId?: string; activityId?: string }>()
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
   const { data: activities, isLoading: activitiesLoading } = useActivities()
   const allProjectsQuery = useAllUserProjects()
-  const createLog = useCreateLog()
 
   // Extract and properly type the data
   const allProjects: Project[] = allProjectsQuery.data ?? []
@@ -71,12 +75,57 @@ export default function LogScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [showTimePicker, setShowTimePicker] = useState(false)
   const [photoUri, setPhotoUri] = useState<string | null>(null)
-  const [hours, setHours] = useState(0)
-  const [minutes, setMinutes] = useState(30)
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
 
   // Use pre-selected values when available
   const effectiveActivity = selectedActivity ?? preSelectedActivity
   const effectiveProject = selectedProject ?? preSelectedProject
+
+  // Fetch fields for the selected activity
+  const { data: activityFields, isLoading: fieldsLoading } = useActivityFields(
+    effectiveActivity?.id ?? ''
+  )
+
+  // Reset field values when activity changes
+  useEffect(() => {
+    setFieldValues({})
+  }, [effectiveActivity?.id])
+
+  // Create log mutation
+  const createLogMutation = useMutation({
+    mutationFn: async (input: {
+      projectId: string
+      activityId: string
+      fieldValues: Record<string, FieldValue>
+      note?: string
+      photoUri?: string
+      loggedAt: string
+    }) => {
+      let imageUrls: string[] | undefined
+      if (input.photoUri && user) {
+        const tempId = `${Date.now()}`
+        const uploadedUrl = await uploadLogPhoto(user.id, tempId, input.photoUri)
+        imageUrls = [uploadedUrl]
+      }
+
+      return createLogWithFields({
+        project_id: input.projectId,
+        activity_id: input.activityId,
+        user_id: user!.id,
+        fieldValues: input.fieldValues,
+        note: input.note,
+        image_urls: imageUrls,
+        logged_at: input.loggedAt,
+      })
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['logs', variables.projectId] })
+      queryClient.invalidateQueries({ queryKey: ['projects', variables.activityId] })
+      queryClient.invalidateQueries({ queryKey: ['activity-logs', variables.activityId] })
+      queryClient.invalidateQueries({ queryKey: ['recent-projects', user?.id] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+    },
+  })
 
   // Filter projects by selected activity
   const filteredProjects = useMemo((): Project[] => {
@@ -84,12 +133,20 @@ export default function LogScreen() {
     return allProjects.filter((p) => p.activity_id === effectiveActivity.id)
   }, [effectiveActivity, allProjects])
 
-  // Handle activity selection - clears project when activity changes
+  // Handle activity selection - clears project and field values when activity changes
   const handleActivitySelect = (activity: Activity) => {
     if (selectedActivity?.id !== activity.id) {
       setSelectedProject(null)
+      setFieldValues({})
     }
     setSelectedActivity(activity)
+  }
+
+  const handleFieldChange = (fieldName: string, value: string) => {
+    setFieldValues((prev) => ({
+      ...prev,
+      [fieldName]: value,
+    }))
   }
 
   const { control, handleSubmit, reset } = useForm<LogFormData>({
@@ -99,7 +156,8 @@ export default function LogScreen() {
     },
   })
 
-  const totalMinutes = hours * 60 + minutes
+  // Check if at least one field has a value
+  const hasFieldValues = Object.values(fieldValues).some((v) => v && v.trim() !== '')
 
   const handlePickPhoto = async () => {
     const uri = await pickImage()
@@ -136,14 +194,36 @@ export default function LogScreen() {
   }
 
   const handleFormSubmit = handleSubmit((data) => {
-    if (!effectiveProject) return
-    if (totalMinutes <= 0) return
+    if (!effectiveProject || !user) return
 
-    createLog.mutate(
+    // Convert string values to proper FieldValue objects
+    const processedFieldValues: Record<string, FieldValue> = {}
+
+    activityFields?.forEach((field) => {
+      const rawValue = fieldValues[field.name]
+      if (rawValue && rawValue.trim() !== '') {
+        let parsedValue: number | string | null = rawValue
+
+        // Parse numeric fields
+        if (field.field_type !== 'text') {
+          const numValue = parseFloat(rawValue)
+          parsedValue = isNaN(numValue) ? null : numValue
+        }
+
+        if (parsedValue !== null) {
+          processedFieldValues[field.name] = {
+            value: parsedValue,
+            unit: field.unit,
+          }
+        }
+      }
+    })
+
+    createLogMutation.mutate(
       {
         projectId: effectiveProject.id,
         activityId: effectiveProject.activity_id,
-        value: totalMinutes,
+        fieldValues: processedFieldValues,
         note: data.note || undefined,
         photoUri: photoUri || undefined,
         loggedAt: date.toISOString(),
@@ -151,8 +231,8 @@ export default function LogScreen() {
       {
         onSuccess: () => {
           reset()
-          setHours(0)
-          setMinutes(30)
+          setFieldValues({})
+          setPhotoUri(null)
           router.back()
         },
       }
@@ -265,16 +345,35 @@ export default function LogScreen() {
           )}
         </View>
 
-        {/* Duration Picker */}
-        <View style={styles.section}>
-          <Text style={styles.label}>Duration</Text>
-          <DurationPicker
-            hours={hours}
-            minutes={minutes}
-            onHoursChange={setHours}
-            onMinutesChange={setMinutes}
-          />
-        </View>
+        {/* Dynamic Field Inputs */}
+        {effectiveActivity && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Fields</Text>
+            {fieldsLoading ? (
+              <ActivityIndicator size="small" color="#007AFF" />
+            ) : activityFields && activityFields.length > 0 ? (
+              <View style={styles.fieldsContainer}>
+                {activityFields.map((field) => (
+                  <View key={field.id} style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>
+                      {field.name} ({field.unit})
+                      {field.is_primary && <Text style={styles.primaryIndicator}> *</Text>}
+                    </Text>
+                    <TextInput
+                      style={styles.fieldInput}
+                      value={fieldValues[field.name] ?? ''}
+                      onChangeText={(value) => handleFieldChange(field.name, value)}
+                      keyboardType={field.field_type === 'text' ? 'default' : 'numeric'}
+                      placeholder={`Enter ${field.unit}`}
+                    />
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.emptyText}>No fields configured for this activity.</Text>
+            )}
+          </View>
+        )}
 
         {/* Date & Time Picker */}
         <View style={styles.section}>
@@ -365,12 +464,12 @@ export default function LogScreen() {
         <TouchableOpacity
           style={[
             styles.submitButton,
-            (!effectiveProject || totalMinutes <= 0 || createLog.isPending) && styles.submitButtonDisabled,
+            (!effectiveProject || createLogMutation.isPending) && styles.submitButtonDisabled,
           ]}
           onPress={handleFormSubmit}
-          disabled={!effectiveProject || totalMinutes <= 0 || createLog.isPending}
+          disabled={!effectiveProject || createLogMutation.isPending}
         >
-          {createLog.isPending ? (
+          {createLogMutation.isPending ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.submitButtonText}>Log Progress</Text>
@@ -467,6 +566,28 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     color: '#6b7280',
+  },
+  fieldsContainer: {
+    gap: 12,
+  },
+  fieldRow: {
+    gap: 4,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  primaryIndicator: {
+    color: '#007AFF',
+  },
+  fieldInput: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
   },
   dateTimeRow: {
     flexDirection: 'row',

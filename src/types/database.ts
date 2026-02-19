@@ -37,7 +37,6 @@ export type Database = {
           user_id: string
           name: string
           description: string | null
-          category: string | null
           created_at: string
         }
         Insert: {
@@ -45,7 +44,6 @@ export type Database = {
           user_id: string
           name: string
           description?: string | null
-          category?: string | null
           created_at?: string
         }
         Update: {
@@ -53,7 +51,6 @@ export type Database = {
           user_id?: string
           name?: string
           description?: string | null
-          category?: string | null
           created_at?: string
         }
         Relationships: [
@@ -290,12 +287,358 @@ export type Database = {
           }
         ]
       }
+      activity_fields: {
+        Row: {
+          id: string
+          activity_id: string
+          name: string
+          field_type: 'time' | 'number' | 'distance' | 'text'
+          unit: string
+          display_order: number
+          is_primary: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          activity_id: string
+          name: string
+          field_type: 'time' | 'number' | 'distance' | 'text'
+          unit: string
+          display_order?: number
+          is_primary?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          activity_id?: string
+          name?: string
+          field_type?: 'time' | 'number' | 'distance' | 'text'
+          unit?: string
+          display_order?: number
+          is_primary?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'activity_fields_activity_id_fkey'
+            columns: ['activity_id']
+            isOneToOne: false
+            referencedRelation: 'activities'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      activity_templates: {
+        Row: {
+          id: string
+          user_id: string | null
+          name: string
+          description: string | null
+          category: string | null
+          is_system: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          name: string
+          description?: string | null
+          category?: string | null
+          is_system?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          name?: string
+          description?: string | null
+          category?: string | null
+          is_system?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'activity_templates_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      template_fields: {
+        Row: {
+          id: string
+          template_id: string
+          name: string
+          field_type: 'time' | 'number' | 'distance' | 'text'
+          unit: string
+          display_order: number
+          is_primary: boolean
+        }
+        Insert: {
+          id?: string
+          template_id: string
+          name: string
+          field_type: 'time' | 'number' | 'distance' | 'text'
+          unit: string
+          display_order?: number
+          is_primary?: boolean
+        }
+        Update: {
+          id?: string
+          template_id?: string
+          name?: string
+          field_type?: 'time' | 'number' | 'distance' | 'text'
+          unit?: string
+          display_order?: number
+          is_primary?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'template_fields_template_id_fkey'
+            columns: ['template_id']
+            isOneToOne: false
+            referencedRelation: 'activity_templates'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      groups: {
+        Row: {
+          id: string
+          creator_id: string
+          name: string
+          description: string | null
+          avatar_url: string | null
+          membership_type: 'open' | 'request' | 'invite'
+          is_discoverable: boolean
+          member_count: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          creator_id: string
+          name: string
+          description?: string | null
+          avatar_url?: string | null
+          membership_type: 'open' | 'request' | 'invite'
+          is_discoverable?: boolean
+          member_count?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          creator_id?: string
+          name?: string
+          description?: string | null
+          avatar_url?: string | null
+          membership_type?: 'open' | 'request' | 'invite'
+          is_discoverable?: boolean
+          member_count?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'groups_creator_id_fkey'
+            columns: ['creator_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      group_members: {
+        Row: {
+          id: string
+          group_id: string
+          user_id: string
+          role: 'admin' | 'moderator' | 'member'
+          joined_at: string
+        }
+        Insert: {
+          id?: string
+          group_id: string
+          user_id: string
+          role?: 'admin' | 'moderator' | 'member'
+          joined_at?: string
+        }
+        Update: {
+          id?: string
+          group_id?: string
+          user_id?: string
+          role?: 'admin' | 'moderator' | 'member'
+          joined_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'group_members_group_id_fkey'
+            columns: ['group_id']
+            isOneToOne: false
+            referencedRelation: 'groups'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'group_members_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      group_join_requests: {
+        Row: {
+          id: string
+          group_id: string
+          user_id: string
+          status: 'pending' | 'approved' | 'rejected'
+          message: string | null
+          requested_at: string
+          responded_at: string | null
+          responded_by: string | null
+        }
+        Insert: {
+          id?: string
+          group_id: string
+          user_id: string
+          status?: 'pending' | 'approved' | 'rejected'
+          message?: string | null
+          requested_at?: string
+          responded_at?: string | null
+          responded_by?: string | null
+        }
+        Update: {
+          id?: string
+          group_id?: string
+          user_id?: string
+          status?: 'pending' | 'approved' | 'rejected'
+          message?: string | null
+          requested_at?: string
+          responded_at?: string | null
+          responded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'group_join_requests_group_id_fkey'
+            columns: ['group_id']
+            isOneToOne: false
+            referencedRelation: 'groups'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'group_join_requests_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'group_join_requests_responded_by_fkey'
+            columns: ['responded_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      group_invites: {
+        Row: {
+          id: string
+          group_id: string
+          invited_user_id: string
+          invited_by: string
+          status: 'pending' | 'accepted' | 'declined'
+          invited_at: string
+          responded_at: string | null
+        }
+        Insert: {
+          id?: string
+          group_id: string
+          invited_user_id: string
+          invited_by: string
+          status?: 'pending' | 'accepted' | 'declined'
+          invited_at?: string
+          responded_at?: string | null
+        }
+        Update: {
+          id?: string
+          group_id?: string
+          invited_user_id?: string
+          invited_by?: string
+          status?: 'pending' | 'accepted' | 'declined'
+          invited_at?: string
+          responded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'group_invites_group_id_fkey'
+            columns: ['group_id']
+            isOneToOne: false
+            referencedRelation: 'groups'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'group_invites_invited_user_id_fkey'
+            columns: ['invited_user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'group_invites_invited_by_fkey'
+            columns: ['invited_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_group_with_admin: {
+        Args: {
+          p_name: string
+          p_description?: string | null
+          p_avatar_url?: string | null
+          p_membership_type?: string
+          p_is_discoverable?: boolean
+        }
+        Returns: string
+      }
+      join_open_group: {
+        Args: {
+          p_group_id: string
+        }
+        Returns: undefined
+      }
+      leave_group: {
+        Args: {
+          p_group_id: string
+        }
+        Returns: undefined
+      }
+      approve_join_request: {
+        Args: {
+          p_request_id: string
+        }
+        Returns: undefined
+      }
+      reject_join_request: {
+        Args: {
+          p_request_id: string
+        }
+        Returns: undefined
+      }
+      accept_group_invite: {
+        Args: {
+          p_invite_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
