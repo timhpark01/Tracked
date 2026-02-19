@@ -2,10 +2,14 @@
 import { View, StyleSheet } from 'react-native'
 import { FeedList } from '@/features/feed'
 
-export function FeedTab() {
+interface FeedTabProps {
+  userId?: string
+}
+
+export function FeedTab({ userId }: FeedTabProps) {
   return (
     <View style={styles.container}>
-      <FeedList feedType="personal" />
+      <FeedList feedType="personal" targetUserId={userId} />
     </View>
   )
 }

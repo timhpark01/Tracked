@@ -18,15 +18,20 @@ const CHART_SIZE = Dimensions.get('window').width - 80
 const CENTER = CHART_SIZE / 2
 const RADIUS = CHART_SIZE / 2 - 40
 
-export function SkillsTab() {
+interface SkillsTabProps {
+  userId?: string
+}
+
+export function SkillsTab({ userId }: SkillsTabProps) {
   const { user } = useAuth()
-  const { data: activities } = useActivities()
+  const targetUserId = userId || user?.id
+  const { data: activities } = useActivities(userId)
 
   // Fetch aggregated stats for all activities
   const { data: activityStats } = useQuery({
-    queryKey: ['activity-stats', user?.id],
+    queryKey: ['activity-stats', targetUserId],
     queryFn: async () => {
-      if (!activities) return []
+      if (!activities || !targetUserId) return []
 
       const stats: ActivityStats[] = []
 
@@ -34,7 +39,7 @@ export function SkillsTab() {
         const { data: logs } = await supabase
           .from('activity_logs')
           .select('value')
-          .eq('user_id', user!.id)
+          .eq('user_id', targetUserId)
           .in(
             'project_id',
             (
@@ -57,7 +62,7 @@ export function SkillsTab() {
 
       return stats.sort((a, b) => b.totalMinutes - a.totalMinutes)
     },
-    enabled: !!user?.id && !!activities,
+    enabled: !!targetUserId && !!activities,
   })
 
   const maxMinutes = Math.max(...(activityStats?.map((s) => s.totalMinutes) ?? [1]), 1)

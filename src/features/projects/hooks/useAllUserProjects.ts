@@ -6,15 +6,20 @@ import type { Database } from '@/types/database'
 
 type Project = Database['public']['Tables']['projects']['Row']
 
-export function useAllUserProjects() {
+/**
+ * Hook for fetching all projects for a user
+ * @param targetUserId - Optional user ID for fetching another user's projects
+ */
+export function useAllUserProjects(targetUserId?: string) {
   const { user, loading: authLoading } = useAuth()
+  const userId = targetUserId || user?.id
 
   return useQuery<Project[]>({
-    queryKey: ['all-projects', user?.id ?? 'none'],
+    queryKey: ['all-projects', userId ?? 'none'],
     queryFn: async () => {
-      if (!user) return []
-      return getAllUserProjects(user.id)
+      if (!userId) return []
+      return getAllUserProjects(userId)
     },
-    enabled: !authLoading && !!user,
+    enabled: !!targetUserId || (!authLoading && !!user),
   })
 }

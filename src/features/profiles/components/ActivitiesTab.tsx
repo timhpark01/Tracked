@@ -6,9 +6,14 @@ import { useMemo } from 'react'
 import { useActivities } from '@/features/activities'
 import { useAllUserProjects } from '@/features/projects'
 
-export function ActivitiesTab() {
-  const { data: activities, isLoading: activitiesLoading } = useActivities()
-  const { data: allProjects, isLoading: projectsLoading } = useAllUserProjects()
+interface ActivitiesTabProps {
+  userId?: string
+  isOwnProfile?: boolean
+}
+
+export function ActivitiesTab({ userId, isOwnProfile = true }: ActivitiesTabProps) {
+  const { data: activities, isLoading: activitiesLoading } = useActivities(userId)
+  const { data: allProjects, isLoading: projectsLoading } = useAllUserProjects(userId)
 
   // Count projects per activity
   const activityStats = useMemo(() => {
@@ -36,14 +41,18 @@ export function ActivitiesTab() {
         <Ionicons name="list-outline" size={64} color="#d1d5db" />
         <Text style={styles.emptyTitle}>No activities yet</Text>
         <Text style={styles.emptySubtitle}>
-          Create an activity to start tracking your hobbies
+          {isOwnProfile
+            ? 'Create an activity to start tracking your hobbies'
+            : 'This user hasn\'t created any activities yet'}
         </Text>
-        <Pressable
-          style={styles.createButton}
-          onPress={() => router.push('/activities/new')}
-        >
-          <Text style={styles.createButtonText}>Create Activity</Text>
-        </Pressable>
+        {isOwnProfile && (
+          <Pressable
+            style={styles.createButton}
+            onPress={() => router.push('/activities/new')}
+          >
+            <Text style={styles.createButtonText}>Create Activity</Text>
+          </Pressable>
+        )}
       </View>
     )
   }
@@ -53,11 +62,12 @@ export function ActivitiesTab() {
       <View style={styles.cardList}>
         {activities.map((activity) => {
           const projectCount = activityStats.get(activity.id) ?? 0
+          const CardWrapper = isOwnProfile ? Pressable : View
           return (
-            <Pressable
+            <CardWrapper
               key={activity.id}
               style={styles.activityCard}
-              onPress={() => router.push(`/activities/${activity.id}`)}
+              {...(isOwnProfile && { onPress: () => router.push(`/activities/${activity.id}`) })}
             >
               <View style={styles.cardContent}>
                 <Text style={styles.activityName}>{activity.name}</Text>
@@ -72,19 +82,23 @@ export function ActivitiesTab() {
                   </Text>
                 </View>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-            </Pressable>
+              {isOwnProfile && (
+                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+              )}
+            </CardWrapper>
           )
         })}
       </View>
 
-      <Pressable
-        style={styles.newActivityButton}
-        onPress={() => router.push('/activities/new')}
-      >
-        <Ionicons name="add-circle-outline" size={20} color="#007AFF" />
-        <Text style={styles.newActivityText}>Create New Activity</Text>
-      </Pressable>
+      {isOwnProfile && (
+        <Pressable
+          style={styles.newActivityButton}
+          onPress={() => router.push('/activities/new')}
+        >
+          <Ionicons name="add-circle-outline" size={20} color="#007AFF" />
+          <Text style={styles.newActivityText}>Create New Activity</Text>
+        </Pressable>
+      )}
     </ScrollView>
   )
 }

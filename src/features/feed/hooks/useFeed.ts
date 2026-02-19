@@ -8,13 +8,14 @@ const PAGE_SIZE = 20
 /**
  * Hook for paginated activity feed using infinite scroll
  * @param feedType - 'public' for all users, 'following' for followed users only, 'personal' for current user's logs
+ * @param targetUserId - Optional user ID for viewing another user's personal feed
  */
-export function useFeed(feedType: FeedType = 'following') {
+export function useFeed(feedType: FeedType = 'following', targetUserId?: string) {
   const { user, loading: authLoading } = useAuth()
 
   // For public feed, only need auth to not be loading
   // For following/personal feed, need auth done AND a valid user with ID
-  const userId = user?.id
+  const userId = targetUserId || user?.id
   const isEnabled = feedType === 'public'
     ? !authLoading
     : !authLoading && !!userId

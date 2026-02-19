@@ -61,11 +61,21 @@ function FeedItemComponent({ log, reactionInfo, commentCount }: FeedItemProps) {
     router.push(`/comments/${log.id}`)
   }
 
+  const handleUserPress = () => {
+    router.push(`/user/${user.id}`)
+  }
+
   return (
     <Pressable style={styles.container} onPress={handleCommentPress}>
       {/* User Row */}
       <View style={styles.userRow}>
-        <View style={styles.avatarContainer}>
+        <Pressable
+          style={styles.avatarContainer}
+          onPress={(e) => {
+            e.stopPropagation()
+            handleUserPress()
+          }}
+        >
           {avatarUri ? (
             <Image source={{ uri: avatarUri }} style={styles.avatar} />
           ) : (
@@ -75,11 +85,17 @@ function FeedItemComponent({ log, reactionInfo, commentCount }: FeedItemProps) {
               </Text>
             </View>
           )}
-        </View>
-        <View style={styles.userInfo}>
+        </Pressable>
+        <Pressable
+          style={styles.userInfo}
+          onPress={(e) => {
+            e.stopPropagation()
+            handleUserPress()
+          }}
+        >
           <Text style={styles.username}>{user.username}</Text>
           <Text style={styles.timestamp}>{formatRelativeTime(log.logged_at)}</Text>
-        </View>
+        </Pressable>
       </View>
 
       {/* Activity: Project & Value */}

@@ -16,9 +16,10 @@ import type { FeedLog, FeedType } from '../services/feed.service'
 
 interface FeedListProps {
   feedType?: FeedType
+  targetUserId?: string
 }
 
-export function FeedList({ feedType = 'following' }: FeedListProps) {
+export function FeedList({ feedType = 'following', targetUserId }: FeedListProps) {
   const {
     data,
     fetchNextPage,
@@ -27,7 +28,7 @@ export function FeedList({ feedType = 'following' }: FeedListProps) {
     isLoading,
     refetch,
     isRefetching,
-  } = useFeed(feedType)
+  } = useFeed(feedType, targetUserId)
 
   // Prevents duplicate fetchNextPage calls during scroll momentum
   const onEndReachedCalledDuringMomentum = useRef(false)
