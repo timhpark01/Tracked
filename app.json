@@ -69,7 +69,13 @@
       "expo-splash-screen",
       "expo-web-browser",
       "@react-native-community/datetimepicker",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "expo-notifications",
+        {
+          "color": "#007AFF"
+        }
+      ]
     ],
     "extra": {
       "router": {},

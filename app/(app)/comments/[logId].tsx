@@ -54,10 +54,12 @@ function formatValue(value: number): string {
 interface OriginalPostProps {
   log: FeedLog
   commentCount: number
+  currentUserId?: string
 }
 
-function OriginalPost({ log, commentCount }: OriginalPostProps) {
+function OriginalPost({ log, commentCount, currentUserId }: OriginalPostProps) {
   const { user, activity } = log
+  const isOwner = currentUserId === user.id
   const avatarUri = user.avatar_url || undefined
   const displayValue = formatValue(log.value)
 
@@ -66,6 +68,10 @@ function OriginalPost({ log, commentCount }: OriginalPostProps) {
 
   const handleGudoPress = () => {
     toggleReaction.mutate(log.id)
+  }
+
+  const handleEdit = () => {
+    router.push(`/log/edit/${log.id}`)
   }
 
   return (
@@ -85,6 +91,11 @@ function OriginalPost({ log, commentCount }: OriginalPostProps) {
           <Text style={styles.postUsername}>{user.username}</Text>
           <Text style={styles.postTimestamp}>{formatRelativeTime(log.logged_at)}</Text>
         </View>
+        {isOwner && (
+          <Pressable style={styles.editButton} onPress={handleEdit}>
+            <Ionicons name="pencil" size={18} color="#007AFF" />
+          </Pressable>
+        )}
       </View>
 
       {/* Activity & Value */}
@@ -311,7 +322,7 @@ export default function CommentsScreen() {
         )}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
-          log ? <OriginalPost log={log} commentCount={comments?.length ?? 0} /> : null
+          log ? <OriginalPost log={log} commentCount={comments?.length ?? 0} currentUserId={user?.id} /> : null
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
@@ -564,6 +575,10 @@ const styles = StyleSheet.create({
   postUserInfo: {
     marginLeft: 12,
     flex: 1,
+  },
+  editButton: {
+    padding: 8,
+    marginLeft: 8,
   },
   postUsername: {
     fontSize: 16,

@@ -2,9 +2,11 @@
 import { Tabs, router, usePathname } from 'expo-router'
 import { View, StyleSheet, DeviceEventEmitter } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { useUnreadCount } from '@/features/notifications'
 
 export default function TabsLayout() {
   const pathname = usePathname()
+  const { data: unreadCount } = useUnreadCount()
 
   return (
     <Tabs
@@ -68,6 +70,13 @@ export default function TabsLayout() {
           options={{
             title: 'Inbox',
             tabBarLabel: 'Inbox',
+            tabBarBadge: unreadCount && unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,
+            tabBarBadgeStyle: {
+              backgroundColor: '#ef4444',
+              fontSize: 10,
+              minWidth: 18,
+              height: 18,
+            },
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="mail-outline" size={size} color={color} />
             ),

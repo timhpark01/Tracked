@@ -40,8 +40,9 @@ export function LogHistory({ logs, unit, onDeleteLog }: LogHistoryProps) {
 
 const styles = StyleSheet.create({
   listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingLeft: 16,
+    paddingRight: 8,
+    paddingBottom: 8,
   },
   emptyContainer: {
     padding: 32,

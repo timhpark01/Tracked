@@ -6,6 +6,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient, useAppStateRefresh } from '@/lib/query-client'
 import { useSupabaseAuthRefresh } from '@/lib/supabase'
 import { AuthProvider } from '@/features/auth'
+import { usePushNotifications } from '@/features/notifications'
 import * as WebBrowser from 'expo-web-browser'
 
 // Complete any pending auth sessions - MUST be at app entry point
@@ -70,6 +71,11 @@ const styles = StyleSheet.create({
   },
 })
 
+function PushNotificationHandler() {
+  usePushNotifications()
+  return null
+}
+
 function RootLayoutContent() {
   useAppStateRefresh()
   useSupabaseAuthRefresh()
@@ -93,6 +99,7 @@ function RootLayoutContent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <PushNotificationHandler />
         <Slot />
       </AuthProvider>
     </QueryClientProvider>

@@ -1,5 +1,6 @@
 // src/features/profiles/components/SkillsTab.tsx
-import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native'
+import { useState } from 'react'
+import { View, Text, StyleSheet, ScrollView, Dimensions, Pressable } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useActivities } from '@/features/activities'
 import { useQuery } from '@tanstack/react-query'
@@ -26,6 +27,7 @@ export function SkillsTab({ userId }: SkillsTabProps) {
   const { user } = useAuth()
   const targetUserId = userId || user?.id
   const { data: activities } = useActivities(userId)
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
 
   // Fetch aggregated stats for all activities
   const { data: activityStats } = useQuery({
@@ -151,7 +153,10 @@ export function SkillsTab({ userId }: SkillsTabProps) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Skill Progress</Text>
         {radarStats.length >= 3 ? (
-          <View style={styles.chartContainer}>
+          <Pressable
+            style={styles.chartContainer}
+            onPress={() => setSelectedIndex(null)}
+          >
             <Svg width={CHART_SIZE} height={CHART_SIZE}>
               {/* Grid circles/polygons */}
               {gridPolygons.map((points, i) => (
@@ -188,18 +193,32 @@ export function SkillsTab({ userId }: SkillsTabProps) {
                 strokeWidth={2}
               />
 
-              {/* Data points */}
+              {/* Data points - with larger touch targets */}
               {radarStats.map((stat, i) => {
                 const value = maxMinutes > 0 ? (stat.totalMinutes / maxMinutes) * 100 : 0
                 const point = getPoint(i, Math.max(value, 5))
+                const isSelected = selectedIndex === i
                 return (
-                  <Circle
-                    key={`point-${i}`}
-                    cx={point.x}
-                    cy={point.y}
-                    r={4}
-                    fill="#007AFF"
-                  />
+                  <G key={`point-${i}`}>
+                    {/* Invisible larger touch target */}
+                    <Circle
+                      cx={point.x}
+                      cy={point.y}
+                      r={20}
+                      fill="transparent"
+                      onPress={() => setSelectedIndex(i)}
+                    />
+                    {/* Visible point */}
+                    <Circle
+                      cx={point.x}
+                      cy={point.y}
+                      r={isSelected ? 8 : 5}
+                      fill={isSelected ? '#0056b3' : '#007AFF'}
+                      stroke={isSelected ? '#fff' : 'none'}
+                      strokeWidth={isSelected ? 2 : 0}
+                      onPress={() => setSelectedIndex(i)}
+                    />
+                  </G>
                 )
               })}
 
@@ -215,7 +234,8 @@ export function SkillsTab({ userId }: SkillsTabProps) {
                     x={labelPoint.x}
                     y={labelPoint.y}
                     fontSize={11}
-                    fill="#6b7280"
+                    fill={selectedIndex === i ? '#007AFF' : '#6b7280'}
+                    fontWeight={selectedIndex === i ? 'bold' : 'normal'}
                     textAnchor="middle"
                     alignmentBaseline="middle"
                   >
@@ -225,18 +245,35 @@ export function SkillsTab({ userId }: SkillsTabProps) {
               })}
             </Svg>
 
-            {/* Legend */}
-            <View style={styles.legend}>
-              {radarStats.map((stat) => (
-                <View key={stat.activityId} style={styles.legendItem}>
-                  <View style={styles.legendDot} />
-                  <Text style={styles.legendText} numberOfLines={1}>
-                    {stat.activityName}: {formatTime(stat.totalMinutes)}
-                  </Text>
+            {/* Selected skill tooltip */}
+            {selectedIndex !== null && radarStats[selectedIndex] && (
+              <View style={styles.tooltip}>
+                <Text style={styles.tooltipTitle}>
+                  {radarStats[selectedIndex].activityName}
+                </Text>
+                <View style={styles.tooltipStats}>
+                  <View style={styles.tooltipStat}>
+                    <Text style={styles.tooltipValue}>
+                      {formatTime(radarStats[selectedIndex].totalMinutes)}
+                    </Text>
+                    <Text style={styles.tooltipLabel}>Total Time</Text>
+                  </View>
+                  <View style={styles.tooltipDivider} />
+                  <View style={styles.tooltipStat}>
+                    <Text style={styles.tooltipValue}>
+                      {radarStats[selectedIndex].totalLogs}
+                    </Text>
+                    <Text style={styles.tooltipLabel}>Logs</Text>
+                  </View>
                 </View>
-              ))}
-            </View>
-          </View>
+              </View>
+            )}
+
+            {/* Tap hint when no selection */}
+            {selectedIndex === null && (
+              <Text style={styles.tapHint}>Tap a point for details</Text>
+            )}
+          </Pressable>
         ) : activityStats && activityStats.length > 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="analytics-outline" size={48} color="#d1d5db" />
@@ -384,6 +421,55 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9ca3af',
     marginTop: 4,
+    textAlign: 'center',
+  },
+  tooltip: {
+    marginTop: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    width: '100%',
+  },
+  tooltipTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  tooltipStats: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tooltipStat: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  tooltipValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#007AFF',
+  },
+  tooltipLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  tooltipDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: '#e5e7eb',
+  },
+  tapHint: {
+    marginTop: 12,
+    fontSize: 13,
+    color: '#9ca3af',
     textAlign: 'center',
   },
 })

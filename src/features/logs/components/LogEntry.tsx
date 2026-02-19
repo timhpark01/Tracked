@@ -1,8 +1,9 @@
 // src/features/logs/components/LogEntry.tsx
 import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { router } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import type { Database } from '@/types/database'
-import { parseLogMetadata, type FieldValue } from '@/types/fields'
+import { parseLogMetadata } from '@/types/fields'
 
 type ActivityLog = Database['public']['Tables']['activity_logs']['Row']
 
@@ -56,7 +57,6 @@ export function LogEntry({ log, unit, onDelete, onEdit }: LogEntryProps) {
   // Parse field values from metadata
   const logMetadata = parseLogMetadata(log.metadata)
   const fieldEntries = Object.entries(logMetadata.fields)
-  const hasFieldValues = fieldEntries.length > 0
 
   // Get primary field value for main display
   const primaryField = fieldEntries[0]
@@ -68,46 +68,59 @@ export function LogEntry({ log, unit, onDelete, onEdit }: LogEntryProps) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.valueContainer}>
-          <Text style={styles.value}>{primaryValue}</Text>
-          <Text style={styles.unit}>{primaryUnit}</Text>
-        </View>
-        <Text style={styles.date}>{formatDate(log.logged_at)}</Text>
+      {/* Timeline elements */}
+      <View style={styles.timeline}>
+        <View style={styles.timelineDot} />
+        <View style={styles.timelineLine} />
       </View>
 
-      {/* Secondary field values */}
-      {secondaryFields.length > 0 && (
-        <View style={styles.secondaryFields}>
-          {secondaryFields.map(([name, fieldValue]) => (
-            <View key={name} style={styles.secondaryField}>
-              <Text style={styles.secondaryLabel}>{name}:</Text>
-              <Text style={styles.secondaryValue}>
-                {fieldValue.value} {fieldValue.unit}
-              </Text>
-            </View>
-          ))}
+      {/* Content */}
+      <View style={styles.content}>
+        {/* Date header */}
+        <Text style={styles.date}>{formatDate(log.logged_at)}</Text>
+
+        {/* Value row with actions */}
+        <View style={styles.valueRow}>
+          <View style={styles.valueContainer}>
+            <Text style={styles.value}>{primaryValue}</Text>
+            <Text style={styles.unit}>{primaryUnit}</Text>
+          </View>
+          <View style={styles.actions}>
+            <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
+              <Ionicons name="pencil-outline" size={18} color="#6b7280" />
+            </TouchableOpacity>
+            {onDelete && (
+              <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
+                <Ionicons name="trash-outline" size={18} color="#ef4444" />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-      )}
 
-      {log.note && (
-        <Text style={styles.note}>{truncateNote(log.note)}</Text>
-      )}
+        {/* Secondary field values */}
+        {secondaryFields.length > 0 && (
+          <View style={styles.secondaryFields}>
+            {secondaryFields.map(([name, fieldValue]) => (
+              <View key={name} style={styles.secondaryField}>
+                <Text style={styles.secondaryLabel}>{name}:</Text>
+                <Text style={styles.secondaryValue}>
+                  {fieldValue.value} {fieldValue.unit}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
 
-      {log.image_urls && log.image_urls.length > 0 && (
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: log.image_urls[0] }} style={styles.thumbnail} />
-        </View>
-      )}
+        {/* Note */}
+        {log.note && (
+          <Text style={styles.note}>{truncateNote(log.note)}</Text>
+        )}
 
-      <View style={styles.actions}>
-        <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-          <Text style={styles.editText}>Edit</Text>
-        </TouchableOpacity>
-        {onDelete && (
-          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-            <Text style={styles.deleteText}>Delete</Text>
-          </TouchableOpacity>
+        {/* Image */}
+        {log.image_urls && log.image_urls.length > 0 && (
+          <View style={styles.imageContainer}>
+            <Image source={{ uri: log.image_urls[0] }} style={styles.thumbnail} />
+          </View>
         )}
       </View>
     </View>
@@ -116,18 +129,41 @@ export function LogEntry({ log, unit, onDelete, onEdit }: LogEntryProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    flexDirection: 'row',
+    marginBottom: 8,
+    paddingRight: 8,
   },
-  header: {
+  timeline: {
+    width: 24,
+    alignItems: 'center',
+  },
+  timelineDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#007AFF',
+    marginTop: 4,
+  },
+  timelineLine: {
+    flex: 1,
+    width: 2,
+    backgroundColor: '#e5e7eb',
+    marginTop: 4,
+  },
+  content: {
+    flex: 1,
+    paddingBottom: 16,
+  },
+  date: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginBottom: 6,
+  },
+  valueRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
+    alignItems: 'center',
+    marginBottom: 4,
   },
   valueContainer: {
     flexDirection: 'row',
@@ -135,23 +171,27 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   value: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
-    color: '#007AFF',
+    color: '#111827',
   },
   unit: {
     fontSize: 14,
     color: '#6b7280',
   },
-  date: {
-    fontSize: 12,
-    color: '#9ca3af',
+  actions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    padding: 6,
   },
   secondaryFields: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
-    marginBottom: 8,
+    marginTop: 4,
+    marginBottom: 4,
   },
   secondaryField: {
     flexDirection: 'row',
@@ -171,36 +211,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#374151',
     lineHeight: 20,
-    marginBottom: 8,
+    marginTop: 4,
   },
   imageContainer: {
-    marginTop: 8,
+    marginTop: 10,
   },
   thumbnail: {
     width: '100%',
     height: 150,
     borderRadius: 8,
     backgroundColor: '#f3f4f6',
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 16,
-    marginTop: 8,
-  },
-  editButton: {
-    paddingVertical: 4,
-  },
-  editText: {
-    color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  deleteButton: {
-    paddingVertical: 4,
-  },
-  deleteText: {
-    color: '#ef4444',
-    fontSize: 14,
-    fontWeight: '500',
   },
 })

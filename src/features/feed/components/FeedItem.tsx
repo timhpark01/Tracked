@@ -17,21 +17,38 @@ interface FeedItemProps {
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString)
   const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffSeconds = Math.floor(diffMs / 1000)
-  const diffMinutes = Math.floor(diffSeconds / 60)
-  const diffHours = Math.floor(diffMinutes / 60)
-  const diffDays = Math.floor(diffHours / 24)
 
-  if (diffSeconds < 60) return 'just now'
-  if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`
-  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
-  if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`
+  // Check if date is today
+  const isToday = date.toDateString() === now.toDateString()
 
-  return date.toLocaleDateString(undefined, {
+  // Check if date is yesterday
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+  const isYesterday = date.toDateString() === yesterday.toDateString()
+
+  // Format time with timezone
+  const timeStr = date.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  })
+
+  // Format date
+  const dateStr = date.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
+    year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
   })
+
+  if (isToday) {
+    return `Today, ${dateStr} ${timeStr}`
+  }
+
+  if (isYesterday) {
+    return `Yesterday, ${dateStr} ${timeStr}`
+  }
+
+  return `${dateStr} ${timeStr}`
 }
 
 function formatValue(value: number): string {

@@ -12,8 +12,8 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
+  { key: 'feed', label: 'Posts', icon: 'newspaper-outline' },
   { key: 'skills', label: 'Skills', icon: 'trophy-outline' },
-  { key: 'feed', label: 'Feed', icon: 'newspaper-outline' },
   { key: 'activities', label: 'Activities', icon: 'list-outline' },
 ]
 

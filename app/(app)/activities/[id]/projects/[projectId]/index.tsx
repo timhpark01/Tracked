@@ -70,6 +70,21 @@ export default function ProjectDetailScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#007AFF" />
         </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.headerBtn}
+            onPress={() => router.push(`/activities/${activityId}/projects/${project.id}/edit`)}
+          >
+            <Ionicons name="pencil" size={20} color="#007AFF" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerBtn}
+            onPress={handleDelete}
+            disabled={deleteProject.isPending}
+          >
+            <Ionicons name="trash-outline" size={20} color="#ef4444" />
+          </TouchableOpacity>
+        </View>
       </View>
       <ScrollView style={styles.container}>
         <View style={styles.header}>
@@ -83,12 +98,40 @@ export default function ProjectDetailScreen() {
           </View>
         )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Created</Text>
-          <Text style={styles.dateText}>
-            {new Date(project.created_at).toLocaleDateString()}
-          </Text>
-        </View>
+        {/* Analytics Card */}
+        {(() => {
+          const totalMinutes = logs?.reduce((sum, log) => sum + log.value, 0) ?? 0
+          const sessionCount = logs?.length ?? 0
+          const avgMinutes = sessionCount > 0 ? Math.round(totalMinutes / sessionCount) : 0
+
+          const formatTime = (mins: number) => {
+            if (mins >= 60) {
+              const hours = Math.floor(mins / 60)
+              const minutes = mins % 60
+              return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`
+            }
+            return `${mins}m`
+          }
+
+          return (
+            <View style={styles.analyticsCard}>
+              <View style={styles.analyticsItem}>
+                <Text style={styles.analyticsValue}>{formatTime(totalMinutes)}</Text>
+                <Text style={styles.analyticsLabel}>Total Time</Text>
+              </View>
+              <View style={styles.analyticsDivider} />
+              <View style={styles.analyticsItem}>
+                <Text style={styles.analyticsValue}>{sessionCount}</Text>
+                <Text style={styles.analyticsLabel}>Sessions</Text>
+              </View>
+              <View style={styles.analyticsDivider} />
+              <View style={styles.analyticsItem}>
+                <Text style={styles.analyticsValue}>{formatTime(avgMinutes)}</Text>
+                <Text style={styles.analyticsLabel}>Avg Session</Text>
+              </View>
+            </View>
+          )
+        })()}
 
         <View style={styles.actions}>
           <TouchableOpacity
@@ -96,23 +139,6 @@ export default function ProjectDetailScreen() {
             onPress={() => router.push(`/log?projectId=${project.id}&activityId=${activityId}`)}
           >
             <Text style={styles.logButtonText}>Log Progress</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => router.push(`/activities/${activityId}/projects/${project.id}/edit`)}
-          >
-            <Text style={styles.editButtonText}>Edit Project</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDelete}
-            disabled={deleteProject.isPending}
-          >
-            <Text style={styles.deleteButtonText}>
-              {deleteProject.isPending ? 'Deleting...' : 'Delete Project'}
-            </Text>
           </TouchableOpacity>
         </View>
 
@@ -130,6 +156,10 @@ export default function ProjectDetailScreen() {
             />
           )}
         </View>
+
+        <Text style={styles.createdAt}>
+          {project.name} created {new Date(project.created_at).toLocaleDateString()}
+        </Text>
       </ScrollView>
     </SafeAreaView>
   )
@@ -153,6 +183,14 @@ const styles = StyleSheet.create({
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 8,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  headerBtn: {
     padding: 8,
   },
   container: {
@@ -200,9 +238,32 @@ const styles = StyleSheet.create({
     color: '#374151',
     lineHeight: 24,
   },
-  dateText: {
-    fontSize: 16,
+  analyticsCard: {
+    flexDirection: 'row',
+    marginHorizontal: 24,
+    marginTop: 16,
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 16,
+  },
+  analyticsItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  analyticsValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  analyticsLabel: {
+    fontSize: 12,
     color: '#6b7280',
+    marginTop: 4,
+  },
+  analyticsDivider: {
+    width: 1,
+    backgroundColor: '#e5e7eb',
+    marginVertical: 4,
   },
   actions: {
     padding: 24,
@@ -219,27 +280,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  editButton: {
-    backgroundColor: '#f3f4f6',
-    paddingVertical: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  editButtonText: {
-    color: '#374151',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  deleteButton: {
-    paddingVertical: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  deleteButtonText: {
-    color: '#ef4444',
-    fontSize: 16,
-    fontWeight: '600',
-  },
   historySection: {
     paddingTop: 16,
   },
@@ -252,5 +292,12 @@ const styles = StyleSheet.create({
   },
   logsLoader: {
     marginVertical: 24,
+  },
+  createdAt: {
+    fontSize: 12,
+    color: '#9ca3af',
+    textAlign: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 16,
   },
 })

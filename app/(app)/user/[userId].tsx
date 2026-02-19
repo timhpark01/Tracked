@@ -17,7 +17,7 @@ export default function UserProfileScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>()
   const { user: currentUser } = useAuth()
   const { data: profile, isLoading, error } = useProfile(userId || '')
-  const [activeTab, setActiveTab] = useState<TabKey>('skills')
+  const [activeTab, setActiveTab] = useState<TabKey>('feed')
 
   // Check if viewing own profile
   const isOwnProfile = currentUser?.id === userId

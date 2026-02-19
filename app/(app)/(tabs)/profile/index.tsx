@@ -25,7 +25,7 @@ import { useAuth } from '@/features/auth'
 export default function ProfileScreen() {
   const { user } = useAuth()
   const { data: profile, isLoading, error } = useMyProfile()
-  const [activeTab, setActiveTab] = useState<TabKey>('skills')
+  const [activeTab, setActiveTab] = useState<TabKey>('feed')
 
   // Follower/following/groups counts
   const { data: followers } = useFollowers(user?.id || '')
