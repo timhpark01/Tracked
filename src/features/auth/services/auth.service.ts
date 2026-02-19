@@ -5,10 +5,26 @@ import * as AppleAuthentication from 'expo-apple-authentication'
 import { makeRedirectUri } from 'expo-auth-session'
 import { Platform } from 'react-native'
 
+/**
+ * Get the redirect URI for OAuth and email confirmation
+ */
+export function getOAuthRedirectUri() {
+  return makeRedirectUri({
+    scheme: 'gudos',
+    // Use native redirect for development builds, path for Expo Go
+    native: 'gudos://auth/callback',
+  })
+}
+
 export async function signUp(email: string, password: string) {
+  const redirectUri = getOAuthRedirectUri()
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      emailRedirectTo: redirectUri,
+    },
   })
 
   if (error) throw error
@@ -122,17 +138,6 @@ export async function checkProfileComplete(userId: string): Promise<boolean> {
 // ============================================================================
 // Google OAuth Authentication
 // ============================================================================
-
-/**
- * Get the redirect URI for OAuth
- */
-export function getOAuthRedirectUri() {
-  return makeRedirectUri({
-    scheme: 'gudos',
-    // Use native redirect for development builds, path for Expo Go
-    native: 'gudos://auth/callback',
-  })
-}
 
 /**
  * Sign in with Google OAuth
