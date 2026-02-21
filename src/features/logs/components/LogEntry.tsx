@@ -7,14 +7,22 @@ import { parseLogMetadata } from '@/types/fields'
 
 type ActivityLog = Database['public']['Tables']['activity_logs']['Row']
 
+interface ProjectInfo {
+  name: string
+  color: string | null
+}
+
 interface LogEntryProps {
   log: ActivityLog
   unit?: string
+  project?: ProjectInfo
   onDelete?: () => void
   onEdit?: () => void
 }
 
-export function LogEntry({ log, unit, onDelete, onEdit }: LogEntryProps) {
+export function LogEntry({ log, unit, project, onDelete, onEdit }: LogEntryProps) {
+  const projectColor = project?.color ?? '#007AFF'
+  const showProjectName = project && project.name !== 'General'
   const handleDelete = () => {
     Alert.alert(
       'Delete Log',
@@ -70,14 +78,21 @@ export function LogEntry({ log, unit, onDelete, onEdit }: LogEntryProps) {
     <View style={styles.container}>
       {/* Timeline elements */}
       <View style={styles.timeline}>
-        <View style={styles.timelineDot} />
+        <View style={[styles.timelineDot, { backgroundColor: projectColor }]} />
         <View style={styles.timelineLine} />
       </View>
 
       {/* Content */}
       <View style={styles.content}>
-        {/* Date header */}
-        <Text style={styles.date}>{formatDate(log.logged_at)}</Text>
+        {/* Project name and date header */}
+        <View style={styles.headerRow}>
+          {showProjectName && (
+            <View style={[styles.projectBadge, { backgroundColor: projectColor }]}>
+              <Text style={styles.projectBadgeText}>{project.name}</Text>
+            </View>
+          )}
+          <Text style={styles.date}>{formatDate(log.logged_at)}</Text>
+        </View>
 
         {/* Value row with actions */}
         <View style={styles.valueRow}>
@@ -141,7 +156,6 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#007AFF',
     marginTop: 4,
   },
   timelineLine: {
@@ -154,10 +168,26 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingBottom: 16,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+    flexWrap: 'wrap',
+  },
+  projectBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  projectBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#fff',
+  },
   date: {
     fontSize: 13,
     color: '#6b7280',
-    marginBottom: 6,
   },
   valueRow: {
     flexDirection: 'row',

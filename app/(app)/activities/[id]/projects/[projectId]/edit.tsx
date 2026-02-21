@@ -37,13 +37,14 @@ export default function EditProjectScreen() {
     )
   }
 
-  const handleSubmit = async (data: { name: string; description?: string | null }) => {
+  const handleSubmit = async (data: { name: string; description?: string | null; color?: string }) => {
     try {
       await updateProject.mutateAsync({
         projectId: project.id,
         updates: {
           name: data.name,
           description: data.description,
+          color: data.color,
         },
       })
       router.back()

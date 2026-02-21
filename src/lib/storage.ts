@@ -2,6 +2,7 @@
 import * as ImagePicker from 'expo-image-picker'
 import { readAsStringAsync, EncodingType } from 'expo-file-system/legacy'
 import { decode } from 'base64-arraybuffer'
+import { ActionSheetIOS, Platform, Alert } from 'react-native'
 import { supabase } from './supabase'
 
 /**
@@ -28,6 +29,81 @@ export async function pickImage(): Promise<string | null> {
   }
 
   return result.assets[0].uri
+}
+
+/**
+ * Request camera permissions and take a photo.
+ * @returns Captured image URI or null if cancelled/denied
+ */
+export async function takePhoto(): Promise<string | null> {
+  const { status } = await ImagePicker.requestCameraPermissionsAsync()
+  if (status !== 'granted') {
+    console.warn('Camera permission denied')
+    return null
+  }
+
+  const result = await ImagePicker.launchCameraAsync({
+    mediaTypes: ['images'],
+    allowsEditing: true,
+    quality: 0.8,
+  })
+
+  if (result.canceled || !result.assets[0]) {
+    return null
+  }
+
+  return result.assets[0].uri
+}
+
+/**
+ * Show action sheet to pick image from library or take a photo.
+ * @returns Selected/captured image URI or null if cancelled
+ */
+export function pickOrTakeImage(): Promise<string | null> {
+  return new Promise((resolve) => {
+    const options = ['Take Photo', 'Choose from Library', 'Cancel']
+    const cancelButtonIndex = 2
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex,
+        },
+        async (buttonIndex) => {
+          if (buttonIndex === 0) {
+            resolve(await takePhoto())
+          } else if (buttonIndex === 1) {
+            resolve(await pickImage())
+          } else {
+            resolve(null)
+          }
+        }
+      )
+    } else {
+      // Android: use Alert with buttons
+      Alert.alert(
+        'Add Photo',
+        'Choose an option',
+        [
+          {
+            text: 'Take Photo',
+            onPress: async () => resolve(await takePhoto()),
+          },
+          {
+            text: 'Choose from Library',
+            onPress: async () => resolve(await pickImage()),
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => resolve(null),
+          },
+        ],
+        { cancelable: true, onDismiss: () => resolve(null) }
+      )
+    }
+  })
 }
 
 /**

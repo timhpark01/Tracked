@@ -21,9 +21,9 @@ import { z } from 'zod'
 import { Ionicons } from '@expo/vector-icons'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { ControlledTextArea } from '@/components/forms'
-import { pickImage, uploadLogPhoto } from '@/lib/storage'
+import { pickOrTakeImage, uploadLogPhoto } from '@/lib/storage'
 import { useActivities, useActivityFields } from '@/features/activities'
-import { useAllUserProjects } from '@/features/projects'
+import { useAllUserProjects, createProject } from '@/features/projects'
 import { createLogWithFields } from '@/features/logs'
 import { useAuth } from '@/features/auth'
 import { useQueryClient, useMutation } from '@tanstack/react-query'
@@ -40,7 +40,8 @@ const logSchema = z.object({
 type LogFormData = z.infer<typeof logSchema>
 
 export default function LogScreen() {
-  const { projectId, activityId } = useLocalSearchParams<{ projectId?: string; activityId?: string }>()
+  const { projectId, activityId, mode } = useLocalSearchParams<{ projectId?: string; activityId?: string; mode?: 'activity' }>()
+  const isActivityOnlyMode = mode === 'activity'
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const { data: activities, isLoading: activitiesLoading } = useActivities()
@@ -79,7 +80,22 @@ export default function LogScreen() {
 
   // Use pre-selected values when available
   const effectiveActivity = selectedActivity ?? preSelectedActivity
-  const effectiveProject = selectedProject ?? preSelectedProject
+
+  // Find General project for activity-only mode
+  const generalProject = useMemo(() => {
+    if (!effectiveActivity || !allProjects) return null
+    return allProjects.find(
+      p => p.activity_id === effectiveActivity.id && p.name === 'General'
+    ) ?? null
+  }, [effectiveActivity, allProjects])
+
+  // Use selected project, pre-selected, or fallback to General project
+  const effectiveProject = useMemo(() => {
+    if (selectedProject) return selectedProject
+    if (preSelectedProject) return preSelectedProject
+    if (generalProject) return generalProject
+    return null
+  }, [selectedProject, preSelectedProject, generalProject])
 
   // Fetch fields for the selected activity
   const { data: activityFields, isLoading: fieldsLoading } = useActivityFields(
@@ -127,10 +143,10 @@ export default function LogScreen() {
     },
   })
 
-  // Filter projects by selected activity
+  // Filter projects by selected activity (exclude General - it's used behind the scenes)
   const filteredProjects = useMemo((): Project[] => {
     if (!effectiveActivity || !allProjects) return []
-    return allProjects.filter((p) => p.activity_id === effectiveActivity.id)
+    return allProjects.filter((p) => p.activity_id === effectiveActivity.id && p.name !== 'General')
   }, [effectiveActivity, allProjects])
 
   // Handle activity selection - clears project and field values when activity changes
@@ -160,7 +176,7 @@ export default function LogScreen() {
   const hasFieldValues = Object.values(fieldValues).some((v) => v && v.trim() !== '')
 
   const handlePickPhoto = async () => {
-    const uri = await pickImage()
+    const uri = await pickOrTakeImage()
     if (uri) {
       setPhotoUri(uri)
     }
@@ -193,8 +209,8 @@ export default function LogScreen() {
     }
   }
 
-  const handleFormSubmit = handleSubmit((data) => {
-    if (!effectiveProject || !user) return
+  const handleFormSubmit = handleSubmit(async (data) => {
+    if (!effectiveActivity || !user) return
 
     // Convert string values to proper FieldValue objects
     const processedFieldValues: Record<string, FieldValue> = {}
@@ -219,10 +235,30 @@ export default function LogScreen() {
       }
     })
 
+    // If no project exists (legacy users without General), create one
+    let projectId = effectiveProject?.id
+    if (!projectId) {
+      try {
+        const newProject = await createProject({
+          activity_id: effectiveActivity.id,
+          user_id: user.id,
+          name: 'General',
+          description: null,
+        })
+        projectId = newProject.id
+        // Invalidate projects cache so it shows up
+        queryClient.invalidateQueries({ queryKey: ['projects', effectiveActivity.id] })
+        queryClient.invalidateQueries({ queryKey: ['all-projects', user.id] })
+      } catch (error) {
+        console.error('Failed to create General project:', error)
+        return
+      }
+    }
+
     createLogMutation.mutate(
       {
-        projectId: effectiveProject.id,
-        activityId: effectiveProject.activity_id,
+        projectId,
+        activityId: effectiveActivity.id,
         fieldValues: processedFieldValues,
         note: data.note || undefined,
         photoUri: photoUri || undefined,
@@ -279,11 +315,7 @@ export default function LogScreen() {
               {/* Step 1: Activity Selection */}
               <View style={styles.activityGroup}>
                 <Text style={styles.subLabel}>Activity</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.projectList}
-                >
+                <View style={styles.activityChipList}>
                   {activities?.map((activity) => (
                     <Pressable
                       key={activity.id}
@@ -304,11 +336,11 @@ export default function LogScreen() {
                       </Text>
                     </Pressable>
                   ))}
-                </ScrollView>
+                </View>
               </View>
 
-              {/* Step 2: Project Selection (shown after activity is selected) */}
-              {effectiveActivity && filteredProjects.length > 0 && (
+              {/* Step 2: Project Selection (hidden in activity-only mode) */}
+              {effectiveActivity && filteredProjects.length > 0 && !(isActivityOnlyMode && generalProject) && (
                 <View style={styles.activityGroup}>
                   <Text style={styles.subLabel}>Project</Text>
                   <ScrollView
@@ -316,26 +348,36 @@ export default function LogScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.projectList}
                   >
-                    {filteredProjects.map((project) => (
-                      <Pressable
-                        key={project.id}
-                        style={[
-                          styles.projectChip,
-                          effectiveProject?.id === project.id && styles.projectChipSelected,
-                        ]}
-                        onPress={() => setSelectedProject(project)}
-                      >
-                        <Text
+                    {filteredProjects.map((project) => {
+                      const isSelected = effectiveProject?.id === project.id && effectiveProject?.name !== 'General'
+                      return (
+                        <Pressable
+                          key={project.id}
                           style={[
-                            styles.projectChipText,
-                            effectiveProject?.id === project.id && styles.projectChipTextSelected,
+                            styles.projectChip,
+                            isSelected && styles.projectChipSelected,
                           ]}
-                          numberOfLines={1}
+                          onPress={() => {
+                            // Toggle: if already selected, deselect (use General)
+                            if (isSelected) {
+                              setSelectedProject(null)
+                            } else {
+                              setSelectedProject(project)
+                            }
+                          }}
                         >
-                          {project.name}
-                        </Text>
-                      </Pressable>
-                    ))}
+                          <Text
+                            style={[
+                              styles.projectChipText,
+                              isSelected && styles.projectChipTextSelected,
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {project.name}
+                          </Text>
+                        </Pressable>
+                      )
+                    })}
                   </ScrollView>
                 </View>
               )}
@@ -464,10 +506,10 @@ export default function LogScreen() {
         <TouchableOpacity
           style={[
             styles.submitButton,
-            (!effectiveProject || createLogMutation.isPending) && styles.submitButtonDisabled,
+            (!effectiveActivity || createLogMutation.isPending) && styles.submitButtonDisabled,
           ]}
           onPress={handleFormSubmit}
-          disabled={!effectiveProject || createLogMutation.isPending}
+          disabled={!effectiveActivity || createLogMutation.isPending}
         >
           {createLogMutation.isPending ? (
             <ActivityIndicator color="#fff" />
@@ -537,6 +579,12 @@ const styles = StyleSheet.create({
   },
   activityGroup: {
     gap: 8,
+  },
+  activityChipList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingVertical: 4,
   },
   projectList: {
     gap: 8,

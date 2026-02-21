@@ -37,6 +37,7 @@ export type Database = {
           user_id: string
           name: string
           description: string | null
+          display_order: number
           created_at: string
         }
         Insert: {
@@ -44,6 +45,7 @@ export type Database = {
           user_id: string
           name: string
           description?: string | null
+          display_order?: number
           created_at?: string
         }
         Update: {
@@ -51,6 +53,7 @@ export type Database = {
           user_id?: string
           name?: string
           description?: string | null
+          display_order?: number
           created_at?: string
         }
         Relationships: [
@@ -70,6 +73,7 @@ export type Database = {
           user_id: string
           name: string
           description: string | null
+          color: string | null
           created_at: string
         }
         Insert: {
@@ -78,6 +82,7 @@ export type Database = {
           user_id: string
           name: string
           description?: string | null
+          color?: string | null
           created_at?: string
         }
         Update: {
@@ -86,6 +91,7 @@ export type Database = {
           user_id?: string
           name?: string
           description?: string | null
+          color?: string | null
           created_at?: string
         }
         Relationships: [

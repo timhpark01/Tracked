@@ -4,7 +4,7 @@ import { getLog } from '../services/logs.service'
 
 export function useLog(logId: string) {
   return useQuery({
-    queryKey: ['log', logId],
+    queryKey: ['log-raw', logId],
     queryFn: () => getLog(logId),
     enabled: !!logId,
   })

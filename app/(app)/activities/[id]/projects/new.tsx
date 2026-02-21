@@ -11,7 +11,7 @@ export default function NewProjectScreen() {
   const { user } = useAuth()
   const createProject = useCreateProject()
 
-  const handleSubmit = async (data: { name: string; description?: string | null }) => {
+  const handleSubmit = async (data: { name: string; description?: string | null; color?: string }) => {
     if (!user || !activityId) return
 
     try {
@@ -20,6 +20,7 @@ export default function NewProjectScreen() {
         user_id: user.id,
         name: data.name,
         description: data.description,
+        color: data.color,
       })
       router.back()
     } catch (error: any) {

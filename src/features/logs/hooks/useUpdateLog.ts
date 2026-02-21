@@ -45,7 +45,9 @@ export function useUpdateLog() {
       })
     },
     onSuccess: (_data, variables) => {
+      // Invalidate both log query variants (feed version and raw version)
       queryClient.invalidateQueries({ queryKey: ['log', variables.logId] })
+      queryClient.invalidateQueries({ queryKey: ['log-raw', variables.logId] })
       queryClient.invalidateQueries({ queryKey: ['logs', variables.projectId] })
       queryClient.invalidateQueries({ queryKey: ['activity-logs', variables.activityId] })
       // Invalidate feed in case the log appears there

@@ -6,14 +6,16 @@ import { useMemo } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { useActivity, useDeleteActivity } from '@/features/activities'
 import { useProjects } from '@/features/projects'
-import { getLogsByActivity } from '@/features/logs'
-import { useQuery } from '@tanstack/react-query'
+import { getLogsByActivity, LogEntry, useDeleteLog } from '@/features/logs'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 export default function ActivityDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { data: activity, isLoading, error } = useActivity(id ?? '')
   const { data: projects, isLoading: projectsLoading } = useProjects(id ?? '')
   const deleteActivity = useDeleteActivity()
+  const deleteLog = useDeleteLog()
+  const queryClient = useQueryClient()
 
   // Fetch all logs for this activity to compute analytics
   const { data: logs } = useQuery({
@@ -53,6 +55,35 @@ export default function ActivityDetailScreen() {
 
     return stats
   }, [projects, logs])
+
+  // Get recent logs (first 10)
+  const recentLogs = useMemo(() => {
+    if (!logs) return []
+    return logs.slice(0, 10)
+  }, [logs])
+
+  // Filter out "General" project from display (it's a behind-the-scenes catch-all)
+  const visibleProjects = useMemo(() => {
+    if (!projects) return []
+    return projects.filter((p) => p.name !== 'General')
+  }, [projects])
+
+  // Create a map of projects by ID for quick lookup
+  const projectsById = useMemo(() => {
+    if (!projects) return new Map()
+    return new Map(projects.map((p) => [p.id, { name: p.name, color: p.color }]))
+  }, [projects])
+
+  const handleDeleteLog = (logId: string, projectId: string) => {
+    deleteLog.mutate(
+      { logId, projectId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['activity-logs', id] })
+        },
+      }
+    )
+  }
 
   if (isLoading) {
     return (
@@ -147,6 +178,17 @@ export default function ActivityDetailScreen() {
           )}
         </View>
 
+        {/* Quick Log Button */}
+        <View style={styles.quickLogSection}>
+          <TouchableOpacity
+            style={styles.quickLogButton}
+            onPress={() => router.push(`/log?activityId=${activity.id}&mode=activity`)}
+          >
+            <Ionicons name="add-circle" size={22} color="#fff" />
+            <Text style={styles.quickLogButtonText}>Log Progress</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Analytics Section */}
         <View style={styles.analyticsSection}>
           <View style={styles.statsGrid}>
@@ -159,7 +201,7 @@ export default function ActivityDetailScreen() {
               <Text style={styles.statLabel}>Total Time</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statValue}>{projects?.length ?? 0}</Text>
+              <Text style={styles.statValue}>{visibleProjects.length}</Text>
               <Text style={styles.statLabel}>Projects</Text>
             </View>
           </View>
@@ -180,9 +222,9 @@ export default function ActivityDetailScreen() {
 
           {projectsLoading ? (
             <ActivityIndicator size="small" color="#007AFF" style={styles.loader} />
-          ) : projects && projects.length > 0 ? (
+          ) : visibleProjects.length > 0 ? (
             <View style={styles.projectsList}>
-              {projects.map((project) => {
+              {visibleProjects.map((project) => {
                 const stats = projectStats.get(project.id)
                 return (
                   <Pressable
@@ -221,6 +263,36 @@ export default function ActivityDetailScreen() {
               <Ionicons name="folder-outline" size={48} color="#d1d5db" />
               <Text style={styles.emptyText}>No projects yet</Text>
               <Text style={styles.emptySubtext}>Create a project to start logging</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Recent Logs Section */}
+        <View style={styles.logsSection}>
+          <View style={styles.logsHeader}>
+            <Text style={styles.sectionTitle}>Recent Logs</Text>
+          </View>
+          {recentLogs.length > 0 ? (
+            <>
+              {recentLogs.map((log) => (
+                <LogEntry
+                  key={log.id}
+                  log={log}
+                  project={projectsById.get(log.project_id)}
+                  onDelete={() => handleDeleteLog(log.id, log.project_id)}
+                />
+              ))}
+              {logs && logs.length > 10 && (
+                <TouchableOpacity style={styles.viewAllButton}>
+                  <Text style={styles.viewAllText}>View All ({logs.length} logs)</Text>
+                </TouchableOpacity>
+              )}
+            </>
+          ) : (
+            <View style={styles.emptyLogs}>
+              <Ionicons name="time-outline" size={48} color="#d1d5db" />
+              <Text style={styles.emptyText}>No logs yet</Text>
+              <Text style={styles.emptySubtext}>Tap "Log Progress" to add your first entry</Text>
             </View>
           )}
         </View>
@@ -290,6 +362,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 20,
     paddingTop: 16,
+  },
+  quickLogSection: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  quickLogButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#007AFF',
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  quickLogButtonText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '600',
   },
   name: {
     fontSize: 28,
@@ -415,5 +506,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9ca3af',
     marginTop: 4,
+  },
+  logsSection: {
+    backgroundColor: '#fff',
+    padding: 20,
+    marginTop: 12,
+  },
+  logsHeader: {
+    marginBottom: 16,
+  },
+  emptyLogs: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  viewAllButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginTop: 8,
+  },
+  viewAllText: {
+    color: '#007AFF',
+    fontSize: 15,
+    fontWeight: '500',
   },
 })

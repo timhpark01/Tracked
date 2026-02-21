@@ -20,7 +20,7 @@ import { Ionicons } from '@expo/vector-icons'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { ControlledTextArea } from '@/components/forms'
 import { DurationPicker } from '@/components/DurationPicker'
-import { pickImage } from '@/lib/storage'
+import { pickOrTakeImage } from '@/lib/storage'
 import { useLog, useUpdateLog } from '@/features/logs'
 
 const logSchema = z.object({
@@ -71,7 +71,7 @@ export default function EditLogScreen() {
   const totalMinutes = hours * 60 + minutes
 
   const handlePickPhoto = async () => {
-    const uri = await pickImage()
+    const uri = await pickOrTakeImage()
     if (uri) {
       setPhotoUri(uri)
     }

@@ -150,6 +150,7 @@ export default function ProjectDetailScreen() {
             <LogHistory
               logs={logs ?? []}
               unit="minutes"
+              project={{ name: project.name, color: project.color }}
               onDeleteLog={(logId) =>
                 deleteLog.mutate({ logId, projectId: project.id })
               }

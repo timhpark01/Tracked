@@ -12,7 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useState } from 'react'
 import { ControlledInput, ControlledTextArea } from '@/components/forms'
-import { pickImage } from '@/lib/storage'
+import { pickOrTakeImage } from '@/lib/storage'
 
 const logSchema = z.object({
   value: z.string().min(1, 'Value is required'),
@@ -38,7 +38,7 @@ export function LogForm({ onSubmit, isLoading = false }: LogFormProps) {
   })
 
   const handlePickPhoto = async () => {
-    const uri = await pickImage()
+    const uri = await pickOrTakeImage()
     if (uri) {
       setPhotoUri(uri)
     }

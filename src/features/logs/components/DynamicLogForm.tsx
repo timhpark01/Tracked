@@ -11,7 +11,7 @@ import {
 import { useState } from 'react'
 import { ControlledTextArea } from '@/components/forms'
 import { FieldInput } from '@/components/FieldInput'
-import { pickImage } from '@/lib/storage'
+import { pickOrTakeImage } from '@/lib/storage'
 import { useActivityFields } from '@/features/activities/hooks/useActivityFields'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -66,7 +66,7 @@ export function DynamicLogForm({
   })
 
   const handlePickPhoto = async () => {
-    const uri = await pickImage()
+    const uri = await pickOrTakeImage()
     if (uri) {
       setPhotoUri(uri)
     }

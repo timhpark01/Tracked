@@ -86,7 +86,9 @@ function ProfileFeedItemComponent({ log, reactionInfo, commentCount }: ProfileFe
         <View style={styles.activityRow}>
           <Text style={styles.activityProject}>
             <Text style={styles.activityName}>{activity.name}</Text>
-            <Text style={styles.projectName}> - {project.name}</Text>
+            {project.name !== 'General' && (
+              <Text style={styles.projectName}> - {project.name}</Text>
+            )}
           </Text>
           <Text style={styles.value}>{displayValue}</Text>
         </View>

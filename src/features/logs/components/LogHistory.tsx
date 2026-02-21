@@ -5,13 +5,19 @@ import { LogEntry } from './LogEntry'
 
 type ActivityLog = Database['public']['Tables']['activity_logs']['Row']
 
+interface ProjectInfo {
+  name: string
+  color: string | null
+}
+
 interface LogHistoryProps {
   logs: ActivityLog[]
   unit?: string
+  project?: ProjectInfo
   onDeleteLog: (logId: string) => void
 }
 
-export function LogHistory({ logs, unit, onDeleteLog }: LogHistoryProps) {
+export function LogHistory({ logs, unit, project, onDeleteLog }: LogHistoryProps) {
   if (logs.length === 0) {
     return (
       <View style={styles.emptyContainer}>
@@ -29,6 +35,7 @@ export function LogHistory({ logs, unit, onDeleteLog }: LogHistoryProps) {
         <LogEntry
           log={item}
           unit={unit}
+          project={project}
           onDelete={() => onDeleteLog(item.id)}
         />
       )}
