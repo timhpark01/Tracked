@@ -1,12 +1,12 @@
 // src/features/profiles/components/SkillsTab.tsx
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { View, Text, StyleSheet, ScrollView, Dimensions, Pressable } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useActivities } from '@/features/activities'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/features/auth'
-import Svg, { Polygon, Circle, Line, Text as SvgText, G } from 'react-native-svg'
+import Svg, { Polygon, Circle, Line, Text as SvgText, G, Rect } from 'react-native-svg'
 
 interface ActivityStats {
   activityId: string
@@ -19,6 +19,13 @@ const CHART_SIZE = Dimensions.get('window').width - 80
 const CENTER = CHART_SIZE / 2
 const RADIUS = CHART_SIZE / 2 - 40
 
+// Heat map constants
+const HEAT_MAP_WEEKS = 16
+const DAY_LABEL_WIDTH = 28
+const HEAT_MAP_PADDING = 32 + 32 // container padding (16*2) + section padding (16*2)
+const CELL_GAP = 2
+const CELL_SIZE = (Dimensions.get('window').width - HEAT_MAP_PADDING - DAY_LABEL_WIDTH - 8) / HEAT_MAP_WEEKS - CELL_GAP
+
 interface SkillsTabProps {
   userId?: string
 }
@@ -28,6 +35,11 @@ export function SkillsTab({ userId }: SkillsTabProps) {
   const targetUserId = userId || user?.id
   const { data: activities } = useActivities(userId)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const [selectedHeatMapDay, setSelectedHeatMapDay] = useState<{
+    date: string
+    count: number
+    minutes: number
+  } | null>(null)
 
   // Fetch aggregated stats for all activities
   const { data: activityStats } = useQuery({
@@ -66,6 +78,84 @@ export function SkillsTab({ userId }: SkillsTabProps) {
     },
     enabled: !!targetUserId && !!activities,
   })
+
+  // Fetch log history for heat map (past 16 weeks)
+  const { data: logHistory } = useQuery({
+    queryKey: ['log-history-heatmap', targetUserId],
+    queryFn: async () => {
+      if (!targetUserId) return []
+
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - 16 * 7) // 16 weeks ago
+
+      const { data: logs } = await supabase
+        .from('activity_logs')
+        .select('created_at, value')
+        .eq('user_id', targetUserId)
+        .gte('created_at', startDate.toISOString())
+        .order('created_at', { ascending: true })
+
+      return logs ?? []
+    },
+    enabled: !!targetUserId,
+  })
+
+  // Process log data for heat map
+  const heatMapData = useMemo(() => {
+    const today = new Date()
+    const dayOfWeek = today.getDay() // 0 = Sunday
+    const weeks = 16
+    const totalDays = weeks * 7
+
+    // Create a map of date strings to log counts/minutes
+    const logsByDate: Record<string, { count: number; minutes: number }> = {}
+    logHistory?.forEach((log) => {
+      const date = new Date(log.created_at).toISOString().split('T')[0]
+      if (!logsByDate[date]) {
+        logsByDate[date] = { count: 0, minutes: 0 }
+      }
+      logsByDate[date].count++
+      logsByDate[date].minutes += log.value || 0
+    })
+
+    // Generate array of days (16 weeks, starting from Sunday of earliest week)
+    const days: Array<{
+      date: string
+      count: number
+      minutes: number
+      level: number
+    }> = []
+
+    // Start from today and go back, then reverse
+    const startOffset = totalDays - 1 - dayOfWeek
+    for (let i = startOffset; i >= -dayOfWeek; i--) {
+      const d = new Date(today)
+      d.setDate(d.getDate() - i)
+      const dateStr = d.toISOString().split('T')[0]
+      const data = logsByDate[dateStr] || { count: 0, minutes: 0 }
+
+      // Calculate intensity level (0-4)
+      let level = 0
+      if (data.count > 0) {
+        if (data.minutes >= 120) level = 4
+        else if (data.minutes >= 60) level = 3
+        else if (data.minutes >= 30) level = 2
+        else level = 1
+      }
+
+      days.push({
+        date: dateStr,
+        count: data.count,
+        minutes: data.minutes,
+        level,
+      })
+    }
+
+    return days
+  }, [logHistory])
+
+  // Heat map colors (light to dark blue)
+  const heatMapColors = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127']
 
   const maxMinutes = Math.max(...(activityStats?.map((s) => s.totalMinutes) ?? [1]), 1)
 
@@ -149,6 +239,97 @@ export function SkillsTab({ userId }: SkillsTabProps) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Activity Heat Map Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Activity History</Text>
+        {heatMapData.length > 0 ? (
+          <Pressable onPress={() => setSelectedHeatMapDay(null)}>
+            {/* Day labels */}
+            <View style={styles.heatMapContainer}>
+              <View style={styles.dayLabels}>
+                <Text style={styles.dayLabel}>Mon</Text>
+                <Text style={styles.dayLabel}>Wed</Text>
+                <Text style={styles.dayLabel}>Fri</Text>
+              </View>
+              <View style={styles.heatMapGrid}>
+                <Svg
+                  width={HEAT_MAP_WEEKS * (CELL_SIZE + CELL_GAP)}
+                  height={7 * (CELL_SIZE + CELL_GAP)}
+                >
+                  {heatMapData.map((day, index) => {
+                    const week = Math.floor(index / 7)
+                    const dayOfWeek = index % 7
+                    const isSelected = selectedHeatMapDay?.date === day.date
+
+                    return (
+                      <Rect
+                        key={day.date}
+                        x={week * (CELL_SIZE + CELL_GAP)}
+                        y={dayOfWeek * (CELL_SIZE + CELL_GAP)}
+                        width={CELL_SIZE}
+                        height={CELL_SIZE}
+                        rx={2}
+                        fill={heatMapColors[day.level]}
+                        stroke={isSelected ? '#007AFF' : 'transparent'}
+                        strokeWidth={isSelected ? 2 : 0}
+                        onPress={() =>
+                          setSelectedHeatMapDay({
+                            date: day.date,
+                            count: day.count,
+                            minutes: day.minutes,
+                          })
+                        }
+                      />
+                    )
+                  })}
+                </Svg>
+              </View>
+            </View>
+
+            {/* Legend */}
+            <View style={styles.heatMapLegend}>
+              <Text style={styles.legendText}>Less</Text>
+              {heatMapColors.map((color, i) => (
+                <View
+                  key={i}
+                  style={[styles.legendCell, { backgroundColor: color }]}
+                />
+              ))}
+              <Text style={styles.legendText}>More</Text>
+            </View>
+
+            {/* Selected day tooltip */}
+            {selectedHeatMapDay && (
+              <View style={styles.heatMapTooltip}>
+                <Text style={styles.heatMapTooltipDate}>
+                  {new Date(selectedHeatMapDay.date + 'T12:00:00').toLocaleDateString(
+                    undefined,
+                    {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                    }
+                  )}
+                </Text>
+                <Text style={styles.heatMapTooltipStats}>
+                  {selectedHeatMapDay.count === 0
+                    ? 'No activity'
+                    : `${selectedHeatMapDay.count} log${selectedHeatMapDay.count !== 1 ? 's' : ''} • ${formatTime(selectedHeatMapDay.minutes)}`}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        ) : (
+          <View style={styles.emptyState}>
+            <Ionicons name="calendar-outline" size={48} color="#d1d5db" />
+            <Text style={styles.emptyText}>No activity yet</Text>
+            <Text style={styles.emptySubtext}>
+              Start logging to see your activity history
+            </Text>
+          </View>
+        )}
+      </View>
+
       {/* Skill Radar Chart Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Skill Progress</Text>
@@ -372,9 +553,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   legendText: {
-    fontSize: 13,
-    color: '#6b7280',
-    flex: 1,
+    fontSize: 11,
+    color: '#9ca3af',
+    marginHorizontal: 4,
   },
   badgesGrid: {
     flexDirection: 'row',
@@ -471,5 +652,55 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#9ca3af',
     textAlign: 'center',
+  },
+  heatMapContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    overflow: 'hidden',
+  },
+  dayLabels: {
+    width: DAY_LABEL_WIDTH,
+    marginRight: 8,
+    justifyContent: 'space-around',
+    height: 7 * (CELL_SIZE + CELL_GAP) - CELL_GAP,
+    paddingVertical: CELL_SIZE / 4,
+  },
+  dayLabel: {
+    fontSize: 10,
+    color: '#9ca3af',
+    height: CELL_SIZE,
+    lineHeight: CELL_SIZE,
+  },
+  heatMapGrid: {
+    flex: 1,
+  },
+  heatMapLegend: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 12,
+    gap: 4,
+  },
+  legendCell: {
+    width: 12,
+    height: 12,
+    borderRadius: 2,
+  },
+  heatMapTooltip: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  heatMapTooltipDate: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  heatMapTooltipStats: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginTop: 2,
   },
 })

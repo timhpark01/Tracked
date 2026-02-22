@@ -210,7 +210,10 @@ export default function ActivityDetailScreen() {
         {/* Projects Section */}
         <View style={styles.projectsSection}>
           <View style={styles.projectsHeader}>
-            <Text style={styles.sectionTitle}>Projects</Text>
+            <View style={styles.projectsTitleRow}>
+              <Ionicons name="folder-outline" size={16} color="#6b7280" />
+              <Text style={styles.projectsSectionTitle}>Projects</Text>
+            </View>
             <TouchableOpacity
               style={styles.addProjectButton}
               onPress={() => router.push(`/activities/${activity.id}/projects/new`)}
@@ -260,9 +263,7 @@ export default function ActivityDetailScreen() {
             </View>
           ) : (
             <View style={styles.emptyProjects}>
-              <Ionicons name="folder-outline" size={48} color="#d1d5db" />
-              <Text style={styles.emptyText}>No projects yet</Text>
-              <Text style={styles.emptySubtext}>Create a project to start logging</Text>
+              <Text style={styles.emptyProjectsText}>No projects yet</Text>
             </View>
           )}
         </View>
@@ -438,6 +439,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  projectsTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  projectsSectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6b7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   addProjectButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -493,8 +506,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   emptyProjects: {
-    alignItems: 'center',
-    paddingVertical: 32,
+    paddingVertical: 12,
+  },
+  emptyProjectsText: {
+    fontSize: 14,
+    color: '#9ca3af',
   },
   emptyText: {
     fontSize: 16,

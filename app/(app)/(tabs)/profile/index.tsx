@@ -1,5 +1,5 @@
 // app/(app)/profile/index.tsx
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { router } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
+import { useQuery } from '@tanstack/react-query'
 import {
   useMyProfile,
   ProfileTabs,
@@ -21,6 +23,7 @@ import {
 import { useFollowers, useFollowing } from '@/features/social'
 import { useGroups } from '@/features/groups'
 import { useAuth } from '@/features/auth'
+import { supabase } from '@/lib/supabase'
 
 export default function ProfileScreen() {
   const { user } = useAuth()
@@ -31,6 +34,55 @@ export default function ProfileScreen() {
   const { data: followers } = useFollowers(user?.id || '')
   const { data: following } = useFollowing(user?.id || '')
   const { data: groups } = useGroups()
+
+  // Calculate streak (consecutive days with logs)
+  const { data: streak } = useQuery({
+    queryKey: ['user-streak', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return 0
+
+      const { data: logs } = await supabase
+        .from('activity_logs')
+        .select('created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (!logs || logs.length === 0) return 0
+
+      // Get unique dates (in local timezone)
+      const uniqueDates = [...new Set(
+        logs.map(log => {
+          const date = new Date(log.created_at)
+          return date.toISOString().split('T')[0]
+        })
+      )].sort((a, b) => b.localeCompare(a)) // Sort descending
+
+      // Check if today or yesterday has a log (streak must be current)
+      const today = new Date().toISOString().split('T')[0]
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+
+      if (uniqueDates[0] !== today && uniqueDates[0] !== yesterday) {
+        return 0 // Streak broken
+      }
+
+      // Count consecutive days
+      let streakCount = 1
+      for (let i = 1; i < uniqueDates.length; i++) {
+        const prevDate = new Date(uniqueDates[i - 1])
+        const currDate = new Date(uniqueDates[i])
+        const diffDays = Math.round((prevDate.getTime() - currDate.getTime()) / 86400000)
+
+        if (diffDays === 1) {
+          streakCount++
+        } else {
+          break
+        }
+      }
+
+      return streakCount
+    },
+    enabled: !!user?.id,
+  })
 
   if (isLoading) {
     return (
@@ -103,7 +155,15 @@ export default function ProfileScreen() {
 
         {/* Username and Stats */}
         <View style={styles.infoSection}>
-          <Text style={styles.username}>@{profile.username}</Text>
+          <View style={styles.usernameRow}>
+            <Text style={styles.username}>@{profile.username}</Text>
+            {(streak ?? 0) > 0 && (
+              <View style={styles.streakBadge}>
+                <Ionicons name="flame" size={12} color="#fff" />
+                <Text style={styles.streakText}>{streak}</Text>
+              </View>
+            )}
+          </View>
 
           {/* Stats Row */}
           <View style={styles.statsRow}>
@@ -130,14 +190,7 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
 
-          {/* Edit button */}
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => router.push('/profile/edit')}
-          >
-            <Text style={styles.editButtonText}>Edit Profile</Text>
-          </TouchableOpacity>
-        </View>
+                  </View>
       </View>
 
       {/* Bio */}
@@ -244,15 +297,34 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     fontWeight: '600',
   },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f97316',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    gap: 2,
+  },
+  streakText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
   infoSection: {
     flex: 1,
     justifyContent: 'center',
+  },
+  usernameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
   },
   username: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#111827',
-    marginBottom: 8,
   },
   // Stats row
   statsRow: {
@@ -272,20 +344,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6b7280',
   },
-  editButton: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    alignSelf: 'flex-start',
-  },
-  editButtonText: {
-    color: '#374151',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  // Bio
+    // Bio
   bioSection: {
     paddingHorizontal: 16,
     paddingBottom: 12,

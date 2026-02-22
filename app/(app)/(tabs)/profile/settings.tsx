@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { router } from 'expo-router'
 import { useAuth } from '@/features/auth'
 
 export default function SettingsScreen() {
@@ -26,6 +27,21 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Profile</Text>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push('/profile/edit')}
+        >
+          <View style={styles.menuItemLeft}>
+            <Ionicons name="person-outline" size={22} color="#111827" />
+            <Text style={styles.menuItemText}>Edit Profile</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
 

@@ -339,8 +339,8 @@ export default function LogScreen() {
                 </View>
               </View>
 
-              {/* Step 2: Project Selection (hidden in activity-only mode) */}
-              {effectiveActivity && filteredProjects.length > 0 && !(isActivityOnlyMode && generalProject) && (
+              {/* Step 2: Project Selection */}
+              {effectiveActivity && filteredProjects.length > 0 && (
                 <View style={styles.activityGroup}>
                   <Text style={styles.subLabel}>Project</Text>
                   <ScrollView
