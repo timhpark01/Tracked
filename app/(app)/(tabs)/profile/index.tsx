@@ -21,7 +21,6 @@ import {
   type TabKey,
 } from '@/features/profiles'
 import { useFollowers, useFollowing } from '@/features/social'
-import { useGroups } from '@/features/groups'
 import { useAuth } from '@/features/auth'
 import { supabase } from '@/lib/supabase'
 
@@ -30,10 +29,9 @@ export default function ProfileScreen() {
   const { data: profile, isLoading, error } = useMyProfile()
   const [activeTab, setActiveTab] = useState<TabKey>('feed')
 
-  // Follower/following/groups counts
+  // Follower/following counts
   const { data: followers } = useFollowers(user?.id || '')
   const { data: following } = useFollowing(user?.id || '')
-  const { data: groups } = useGroups()
 
   // Calculate streak (consecutive days with logs)
   const { data: streak } = useQuery({
@@ -180,13 +178,6 @@ export default function ProfileScreen() {
             >
               <Text style={styles.statNumber}>{following?.length ?? 0}</Text>
               <Text style={styles.statLabel}>Following</Text>
-            </Pressable>
-            <Pressable
-              style={styles.statItem}
-              onPress={() => router.push('/groups')}
-            >
-              <Text style={styles.statNumber}>{groups?.length ?? 0}</Text>
-              <Text style={styles.statLabel}>Groups</Text>
             </Pressable>
           </View>
 
