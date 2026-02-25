@@ -116,6 +116,7 @@ export default function EditLogScreen() {
         note: data.note || null,
         photoUri: photoUri || undefined,
         loggedAt: date.toISOString(),
+        existingMetadata: log.metadata, // Pass existing metadata so fields get updated too
       },
       {
         onSuccess: () => {

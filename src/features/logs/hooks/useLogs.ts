@@ -7,5 +7,6 @@ export function useLogs(projectId: string) {
     queryKey: ['logs', projectId],
     queryFn: () => getLogs(projectId),
     enabled: !!projectId,
+    staleTime: 0, // Always consider data stale so it refetches after invalidation
   })
 }

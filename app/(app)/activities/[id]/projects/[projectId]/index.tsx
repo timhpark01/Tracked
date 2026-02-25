@@ -5,13 +5,17 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useProject, useDeleteProject } from '@/features/projects'
 import { useLogs, useDeleteLog, LogHistory } from '@/features/logs'
+import { useAlwaysRefreshOnFocus } from '@/lib/query-client'
 
 export default function ProjectDetailScreen() {
   const { id: activityId, projectId } = useLocalSearchParams<{ id: string; projectId: string }>()
   const { data: project, isLoading, error } = useProject(projectId ?? '')
-  const { data: logs, isLoading: logsLoading } = useLogs(projectId ?? '')
+  const { data: logs, isLoading: logsLoading, refetch: refetchLogs } = useLogs(projectId ?? '')
   const deleteProject = useDeleteProject()
   const deleteLog = useDeleteLog()
+
+  // Refetch logs when screen gains focus (e.g., after editing a log)
+  useAlwaysRefreshOnFocus(refetchLogs)
 
   if (isLoading) {
     return (

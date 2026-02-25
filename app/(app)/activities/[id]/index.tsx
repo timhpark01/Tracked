@@ -8,6 +8,7 @@ import { useActivity, useDeleteActivity } from '@/features/activities'
 import { useProjects } from '@/features/projects'
 import { getLogsByActivity, LogEntry, useDeleteLog } from '@/features/logs'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useAlwaysRefreshOnFocus } from '@/lib/query-client'
 
 export default function ActivityDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -18,11 +19,15 @@ export default function ActivityDetailScreen() {
   const queryClient = useQueryClient()
 
   // Fetch all logs for this activity to compute analytics
-  const { data: logs } = useQuery({
+  const { data: logs, refetch: refetchLogs } = useQuery({
     queryKey: ['activity-logs', id],
     queryFn: () => getLogsByActivity(id ?? ''),
     enabled: !!id,
+    staleTime: 0, // Always refetch after invalidation
   })
+
+  // Refetch logs when screen gains focus (e.g., after editing a log)
+  useAlwaysRefreshOnFocus(refetchLogs)
 
   // Compute analytics
   const analytics = useMemo(() => {

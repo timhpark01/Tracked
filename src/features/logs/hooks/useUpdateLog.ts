@@ -3,6 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { updateLog } from '../services/logs.service'
 import { uploadLogPhoto } from '@/lib/storage'
 import { useAuth } from '@/features/auth'
+import type { LogFieldValues } from '@/types/fields'
+import type { Database } from '@/types/database'
 
 interface UpdateLogInput {
   logId: string
@@ -13,6 +15,7 @@ interface UpdateLogInput {
   photoUri?: string
   existingImageUrls?: string[] | null
   loggedAt?: string
+  existingMetadata?: unknown // Pass existing metadata so we can update it
 }
 
 export function useUpdateLog() {
@@ -37,11 +40,33 @@ export function useUpdateLog() {
         image_urls = [input.photoUri]
       }
 
+      // Update metadata fields with the new value
+      let metadata: Database['public']['Tables']['activity_logs']['Update']['metadata'] = undefined
+      if (input.value !== undefined && input.existingMetadata) {
+        const existingMeta = input.existingMetadata as LogFieldValues
+        if (existingMeta?.fields && typeof existingMeta.fields === 'object') {
+          const fieldNames = Object.keys(existingMeta.fields)
+          if (fieldNames.length > 0) {
+            // Update the first (primary) field with the new value
+            const primaryFieldName = fieldNames[0]
+            const updatedFields = {
+              ...existingMeta.fields,
+              [primaryFieldName]: {
+                ...existingMeta.fields[primaryFieldName],
+                value: input.value,
+              },
+            }
+            metadata = { fields: updatedFields } as Database['public']['Tables']['activity_logs']['Update']['metadata']
+          }
+        }
+      }
+
       return updateLog(input.logId, {
         value: input.value,
         note: input.note,
         image_urls,
         logged_at: input.loggedAt,
+        metadata,
       })
     },
     onSuccess: (_data, variables) => {

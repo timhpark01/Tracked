@@ -62,14 +62,14 @@ export function LogEntry({ log, unit, project, onDelete, onEdit }: LogEntryProps
     return note.substring(0, maxLength).trim() + '...'
   }
 
-  // Parse field values from metadata
+  // Parse field values from metadata for secondary fields only
   const logMetadata = parseLogMetadata(log.metadata)
   const fieldEntries = Object.entries(logMetadata.fields)
 
-  // Get primary field value for main display
+  // Always use log.value for primary display (single source of truth)
+  const primaryValue = log.value
   const primaryField = fieldEntries[0]
-  const primaryValue = primaryField ? primaryField[1].value : log.value
-  const primaryUnit = primaryField ? primaryField[1].unit : unit || 'units'
+  const primaryUnit = primaryField ? primaryField[1].unit : unit || 'minutes'
 
   // Get secondary fields (all except primary)
   const secondaryFields = fieldEntries.slice(1)
