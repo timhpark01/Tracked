@@ -1,11 +1,14 @@
 // src/features/feed/components/FeedItem.tsx
 import React, { memo } from 'react'
-import { View, Text, Image, StyleSheet, Pressable } from 'react-native'
+import { View, Text, Image, StyleSheet, Pressable, Dimensions } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
+import { MediaCarousel } from '@/components/MediaCarousel'
 import { useToggleReaction, type ReactionInfo } from '@/features/reactions'
 import type { FeedLog } from '../services/feed.service'
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 interface FeedItemProps {
   log: FeedLog
@@ -83,16 +86,10 @@ function FeedItemComponent({ log, reactionInfo, commentCount }: FeedItemProps) {
   }
 
   return (
-    <Pressable style={styles.container} onPress={handleCommentPress}>
+    <View style={styles.container}>
       {/* User Row */}
-      <View style={styles.userRow}>
-        <Pressable
-          style={styles.avatarContainer}
-          onPress={(e) => {
-            e.stopPropagation()
-            handleUserPress()
-          }}
-        >
+      <View style={[styles.userRow, styles.contentPadding]}>
+        <Pressable style={styles.avatarContainer} onPress={handleUserPress}>
           {avatarUri ? (
             <Image source={{ uri: avatarUri }} style={styles.avatar} />
           ) : (
@@ -103,51 +100,43 @@ function FeedItemComponent({ log, reactionInfo, commentCount }: FeedItemProps) {
             </View>
           )}
         </Pressable>
-        <Pressable
-          style={styles.userInfo}
-          onPress={(e) => {
-            e.stopPropagation()
-            handleUserPress()
-          }}
-        >
+        <Pressable style={styles.userInfo} onPress={handleUserPress}>
           <Text style={styles.username}>{user.username}</Text>
           <Text style={styles.timestamp}>{formatRelativeTime(log.logged_at)}</Text>
         </Pressable>
       </View>
 
-      {/* Activity: Project & Value */}
-      <View style={styles.contentRow}>
-        <Text style={styles.activityProject}>
-          <Text style={styles.activityName}>{activity.name}</Text>
-          {project.name !== 'General' && (
-            <Text style={styles.projectName}> - {project.name}</Text>
-          )}
-        </Text>
-        <Text style={styles.value}>{displayValue}</Text>
-      </View>
-
-      {/* Note (if present) */}
-      {log.note && (
-        <Text style={styles.note} numberOfLines={2}>
-          {log.note}
-        </Text>
-      )}
-
-      {/* Image (if present) */}
-      {log.image_urls && log.image_urls.length > 0 && (
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: log.image_urls[0] }} style={styles.image} />
+      {/* Tappable content area - navigates to comments */}
+      <Pressable onPress={handleCommentPress}>
+        {/* Activity: Project & Value */}
+        <View style={[styles.contentRow, styles.contentPadding]}>
+          <Text style={styles.activityProject}>
+            <Text style={styles.activityName}>{activity.name}</Text>
+            {project.name !== 'General' && (
+              <Text style={styles.projectName}> - {project.name}</Text>
+            )}
+          </Text>
+          <Text style={styles.value}>{displayValue}</Text>
         </View>
+
+        {/* Note (if present) */}
+        {log.note && (
+          <Text style={[styles.note, styles.contentPadding]} numberOfLines={2}>
+            {log.note}
+          </Text>
+        )}
+      </Pressable>
+
+      {/* Media (if present) - Full width, handles its own gestures */}
+      {log.image_urls && log.image_urls.length > 0 && (
+        <MediaCarousel urls={log.image_urls} width={SCREEN_WIDTH} height={300} />
       )}
 
       {/* Action Bar */}
-      <View style={styles.actionBar}>
+      <View style={[styles.actionBar, styles.contentPadding]}>
         <Pressable
           style={styles.actionButton}
-          onPress={(e) => {
-            e.stopPropagation()
-            handleGudoPress()
-          }}
+          onPress={handleGudoPress}
           disabled={toggleReaction.isPending}
         >
           <MaterialCommunityIcons
@@ -160,12 +149,12 @@ function FeedItemComponent({ log, reactionInfo, commentCount }: FeedItemProps) {
           </Text>
         </Pressable>
 
-        <View style={styles.actionButton}>
+        <Pressable style={styles.actionButton} onPress={handleCommentPress}>
           <Ionicons name="chatbubble-outline" size={20} color="#6b7280" />
           <Text style={styles.actionCount}>{commentCount ?? 0}</Text>
-        </View>
+        </Pressable>
       </View>
-    </Pressable>
+    </View>
   )
 }
 
@@ -189,15 +178,13 @@ export const FeedItem = memo(FeedItemComponent, (prevProps, nextProps) => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    paddingTop: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  contentPadding: {
+    paddingHorizontal: 16,
   },
   userRow: {
     flexDirection: 'row',
@@ -268,15 +255,6 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     lineHeight: 20,
     marginBottom: 8,
-  },
-  imageContainer: {
-    marginTop: 8,
-  },
-  image: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
   },
   actionBar: {
     flexDirection: 'row',

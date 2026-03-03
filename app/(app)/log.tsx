@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
-  Image,
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
@@ -21,7 +20,8 @@ import { z } from 'zod'
 import { Ionicons } from '@expo/vector-icons'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { ControlledTextArea } from '@/components/forms'
-import { pickOrTakeImage, uploadLogPhoto } from '@/lib/storage'
+import { MediaPicker } from '@/components/MediaPicker'
+import { uploadLogMediaItems, type MediaItem } from '@/lib/storage'
 import { useActivities, useActivityFields } from '@/features/activities'
 import { useAllUserProjects, createProject } from '@/features/projects'
 import { createLogWithFields } from '@/features/logs'
@@ -75,7 +75,7 @@ export default function LogScreen() {
   const [date, setDate] = useState(new Date())
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [showTimePicker, setShowTimePicker] = useState(false)
-  const [photoUri, setPhotoUri] = useState<string | null>(null)
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
 
   // Use pre-selected values when available
@@ -114,14 +114,13 @@ export default function LogScreen() {
       activityId: string
       fieldValues: Record<string, FieldValue>
       note?: string
-      photoUri?: string
+      mediaItems?: MediaItem[]
       loggedAt: string
     }) => {
       let imageUrls: string[] | undefined
-      if (input.photoUri && user) {
+      if (input.mediaItems && input.mediaItems.length > 0 && user) {
         const tempId = `${Date.now()}`
-        const uploadedUrl = await uploadLogPhoto(user.id, tempId, input.photoUri)
-        imageUrls = [uploadedUrl]
+        imageUrls = await uploadLogMediaItems(user.id, tempId, input.mediaItems)
       }
 
       return createLogWithFields({
@@ -174,17 +173,6 @@ export default function LogScreen() {
 
   // Check if at least one field has a value
   const hasFieldValues = Object.values(fieldValues).some((v) => v && v.trim() !== '')
-
-  const handlePickPhoto = async () => {
-    const uri = await pickOrTakeImage()
-    if (uri) {
-      setPhotoUri(uri)
-    }
-  }
-
-  const handleRemovePhoto = () => {
-    setPhotoUri(null)
-  }
 
   const onDateChange = (_event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
@@ -261,14 +249,14 @@ export default function LogScreen() {
         activityId: effectiveActivity.id,
         fieldValues: processedFieldValues,
         note: data.note || undefined,
-        photoUri: photoUri || undefined,
+        mediaItems: mediaItems.length > 0 ? mediaItems : undefined,
         loggedAt: date.toISOString(),
       },
       {
         onSuccess: () => {
           reset()
           setFieldValues({})
-          setPhotoUri(null)
+          setMediaItems([])
           router.back()
         },
       }
@@ -484,22 +472,9 @@ export default function LogScreen() {
           />
         </View>
 
-        {/* Photo */}
+        {/* Media */}
         <View style={styles.section}>
-          <Text style={styles.label}>Photo (optional)</Text>
-          {photoUri ? (
-            <View style={styles.photoContainer}>
-              <Image source={{ uri: photoUri }} style={styles.photoPreview} />
-              <TouchableOpacity style={styles.removePhotoButton} onPress={handleRemovePhoto}>
-                <Text style={styles.removePhotoText}>Remove</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity style={styles.photoButton} onPress={handlePickPhoto}>
-              <Ionicons name="camera-outline" size={20} color="#007AFF" />
-              <Text style={styles.photoButtonText}>Add Photo</Text>
-            </TouchableOpacity>
-          )}
+          <MediaPicker items={mediaItems} onItemsChange={setMediaItems} />
         </View>
 
         {/* Submit Button */}
@@ -668,43 +643,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#007AFF',
-  },
-  photoContainer: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  photoPreview: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-  },
-  removePhotoButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#fee2e2',
-    borderRadius: 8,
-  },
-  removePhotoText: {
-    color: '#ef4444',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  photoButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderStyle: 'dashed',
-    borderRadius: 8,
-  },
-  photoButtonText: {
-    color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '500',
   },
   submitButton: {
     backgroundColor: '#007AFF',

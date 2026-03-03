@@ -1,9 +1,10 @@
 // src/features/profiles/components/ProfileFeedItem.tsx
 import React, { memo } from 'react'
-import { View, Text, Image, StyleSheet, Pressable } from 'react-native'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
+import { MediaCarousel } from '@/components/MediaCarousel'
 import { useToggleReaction, type ReactionInfo } from '@/features/reactions'
 import type { FeedLog } from '@/features/feed'
 
@@ -100,11 +101,9 @@ function ProfileFeedItemComponent({ log, reactionInfo, commentCount }: ProfileFe
           </Text>
         )}
 
-        {/* Image */}
+        {/* Media */}
         {log.image_urls && log.image_urls.length > 0 && (
-          <View style={styles.imageContainer}>
-            <Image source={{ uri: log.image_urls[0] }} style={styles.image} />
-          </View>
+          <MediaCarousel urls={log.image_urls} height={150} />
         )}
 
         {/* Actions */}
@@ -209,15 +208,6 @@ const styles = StyleSheet.create({
     color: '#374151',
     lineHeight: 20,
     marginTop: 4,
-  },
-  imageContainer: {
-    marginTop: 10,
-  },
-  image: {
-    width: '100%',
-    height: 150,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
   },
   actions: {
     flexDirection: 'row',

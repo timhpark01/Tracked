@@ -17,6 +17,7 @@ import {
 import { router, useLocalSearchParams, Stack } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import { MediaCarousel } from '@/components/MediaCarousel'
 import { useComments, useCreateComment, useDeleteComment, Comment } from '@/features/comments'
 import { useLog, FeedLog } from '@/features/feed'
 import { useReactions, useToggleReaction } from '@/features/reactions'
@@ -107,10 +108,10 @@ function OriginalPost({ log, commentCount, currentUserId }: OriginalPostProps) {
       {/* Note */}
       {log.note && <Text style={styles.postNote}>{log.note}</Text>}
 
-      {/* Image */}
+      {/* Media */}
       {log.image_urls && log.image_urls.length > 0 && (
         <View style={styles.postImageContainer}>
-          <Image source={{ uri: log.image_urls[0] }} style={styles.postImage} />
+          <MediaCarousel urls={log.image_urls} height={240} />
         </View>
       )}
 
@@ -614,12 +615,6 @@ const styles = StyleSheet.create({
   },
   postImageContainer: {
     marginBottom: 12,
-  },
-  postImage: {
-    width: '100%',
-    height: 240,
-    borderRadius: 12,
-    backgroundColor: '#f3f4f6',
   },
   postActionBar: {
     flexDirection: 'row',

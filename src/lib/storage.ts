@@ -5,6 +5,15 @@ import { decode } from 'base64-arraybuffer'
 import { ActionSheetIOS, Platform, Alert } from 'react-native'
 import { supabase } from './supabase'
 
+const MAX_MEDIA_ITEMS = 5
+const VIDEO_MAX_DURATION = 30 // seconds
+
+export interface MediaItem {
+  uri: string
+  type: 'image' | 'video'
+  duration?: number // Video duration in seconds
+}
+
 /**
  * Request media library permissions and launch image picker.
  * @returns Selected image URI or null if cancelled/denied
@@ -199,4 +208,197 @@ export async function uploadLogPhoto(
 ): Promise<string> {
   const path = `${userId}/${logId}/${Date.now()}.jpg`
   return uploadImage('log-photos', path, uri)
+}
+
+/**
+ * Pick multiple media items (photos and videos) from library
+ * @param currentCount - Number of already selected items
+ * @returns Array of selected media items
+ */
+export async function pickMedia(currentCount: number = 0): Promise<MediaItem[]> {
+  const remainingSlots = MAX_MEDIA_ITEMS - currentCount
+  if (remainingSlots <= 0) {
+    Alert.alert('Limit Reached', `Maximum ${MAX_MEDIA_ITEMS} media items allowed per post.`)
+    return []
+  }
+
+  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+  if (status !== 'granted') {
+    console.warn('Media library permission denied')
+    return []
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images', 'videos'],
+    allowsMultipleSelection: true,
+    selectionLimit: remainingSlots,
+    quality: 0.8,
+    videoMaxDuration: VIDEO_MAX_DURATION,
+  })
+
+  if (result.canceled || !result.assets) {
+    return []
+  }
+
+  return result.assets.map((asset) => ({
+    uri: asset.uri,
+    type: asset.type === 'video' ? 'video' : 'image',
+    duration: asset.duration ? Math.round(asset.duration / 1000) : undefined,
+  }))
+}
+
+/**
+ * Take a photo or video with the camera
+ * @returns Single media item or null if cancelled
+ */
+export async function captureMedia(): Promise<MediaItem | null> {
+  const { status } = await ImagePicker.requestCameraPermissionsAsync()
+  if (status !== 'granted') {
+    console.warn('Camera permission denied')
+    return null
+  }
+
+  const result = await ImagePicker.launchCameraAsync({
+    mediaTypes: ['images', 'videos'],
+    allowsEditing: true,
+    quality: 0.8,
+    videoMaxDuration: VIDEO_MAX_DURATION,
+  })
+
+  if (result.canceled || !result.assets[0]) {
+    return null
+  }
+
+  const asset = result.assets[0]
+  return {
+    uri: asset.uri,
+    type: asset.type === 'video' ? 'video' : 'image',
+    duration: asset.duration ? Math.round(asset.duration / 1000) : undefined,
+  }
+}
+
+/**
+ * Show action sheet to pick media from library or capture with camera
+ * @param currentCount - Number of already selected items
+ * @returns Array of selected media items
+ */
+export function pickOrCaptureMedia(currentCount: number = 0): Promise<MediaItem[]> {
+  return new Promise((resolve) => {
+    const remainingSlots = MAX_MEDIA_ITEMS - currentCount
+    if (remainingSlots <= 0) {
+      Alert.alert('Limit Reached', `Maximum ${MAX_MEDIA_ITEMS} media items allowed per post.`)
+      resolve([])
+      return
+    }
+
+    const options = ['Take Photo/Video', 'Choose from Library', 'Cancel']
+    const cancelButtonIndex = 2
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex,
+        },
+        async (buttonIndex) => {
+          if (buttonIndex === 0) {
+            const item = await captureMedia()
+            resolve(item ? [item] : [])
+          } else if (buttonIndex === 1) {
+            resolve(await pickMedia(currentCount))
+          } else {
+            resolve([])
+          }
+        }
+      )
+    } else {
+      Alert.alert(
+        'Add Media',
+        'Choose an option',
+        [
+          {
+            text: 'Take Photo/Video',
+            onPress: async () => {
+              const item = await captureMedia()
+              resolve(item ? [item] : [])
+            },
+          },
+          {
+            text: 'Choose from Library',
+            onPress: async () => resolve(await pickMedia(currentCount)),
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => resolve([]),
+          },
+        ],
+        { cancelable: true, onDismiss: () => resolve([]) }
+      )
+    }
+  })
+}
+
+/**
+ * Upload a media item (image or video) to log-photos bucket
+ * @param userId - User ID for folder organization
+ * @param logId - Log ID for subfolder
+ * @param item - Media item to upload
+ * @param index - Unique index to avoid filename collisions
+ * @returns Public URL of uploaded media
+ */
+export async function uploadLogMedia(
+  userId: string,
+  logId: string,
+  item: MediaItem,
+  index: number = 0
+): Promise<string> {
+  const extension = item.type === 'video' ? 'mp4' : 'jpg'
+  const contentType = item.type === 'video' ? 'video/mp4' : 'image/jpeg'
+  // Use timestamp + index to ensure unique filenames even in parallel uploads
+  const path = `${userId}/${logId}/${Date.now()}_${index}.${extension}`
+
+  const base64 = await readAsStringAsync(item.uri, {
+    encoding: EncodingType.Base64,
+  })
+
+  const arrayBuffer = decode(base64)
+
+  const { data, error } = await supabase.storage
+    .from('log-photos')
+    .upload(path, arrayBuffer, {
+      contentType,
+      upsert: true,
+    })
+
+  if (error) {
+    throw error
+  }
+
+  const { data: urlData } = supabase.storage
+    .from('log-photos')
+    .getPublicUrl(data.path)
+
+  return urlData.publicUrl
+}
+
+/**
+ * Upload multiple media items sequentially to avoid overwhelming the server
+ * @param userId - User ID for folder organization
+ * @param logId - Log ID for subfolder
+ * @param items - Array of media items to upload
+ * @returns Array of public URLs
+ */
+export async function uploadLogMediaItems(
+  userId: string,
+  logId: string,
+  items: MediaItem[]
+): Promise<string[]> {
+  // Upload sequentially to avoid rate limiting and ensure reliability
+  const urls: string[] = []
+  for (let i = 0; i < items.length; i++) {
+    const url = await uploadLogMedia(userId, logId, items[i], i)
+    urls.push(url)
+  }
+  return urls
 }

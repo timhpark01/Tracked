@@ -1,9 +1,8 @@
 // src/features/logs/components/LogForm.tsx
 import {
   View,
-  Text,
   TouchableOpacity,
-  Image,
+  Text,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native'
@@ -12,7 +11,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useState } from 'react'
 import { ControlledInput, ControlledTextArea } from '@/components/forms'
-import { pickOrTakeImage } from '@/lib/storage'
+import { MediaPicker } from '@/components/MediaPicker'
+import { type MediaItem } from '@/lib/storage'
 
 const logSchema = z.object({
   value: z.string().min(1, 'Value is required'),
@@ -22,12 +22,12 @@ const logSchema = z.object({
 type LogFormData = z.infer<typeof logSchema>
 
 interface LogFormProps {
-  onSubmit: (data: { value: number; note?: string; photoUri?: string }) => void
+  onSubmit: (data: { value: number; note?: string; mediaItems?: MediaItem[] }) => void
   isLoading?: boolean
 }
 
 export function LogForm({ onSubmit, isLoading = false }: LogFormProps) {
-  const [photoUri, setPhotoUri] = useState<string | null>(null)
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
 
   const { control, handleSubmit } = useForm<LogFormData>({
     resolver: zodResolver(logSchema),
@@ -36,17 +36,6 @@ export function LogForm({ onSubmit, isLoading = false }: LogFormProps) {
       note: '',
     },
   })
-
-  const handlePickPhoto = async () => {
-    const uri = await pickOrTakeImage()
-    if (uri) {
-      setPhotoUri(uri)
-    }
-  }
-
-  const handleRemovePhoto = () => {
-    setPhotoUri(null)
-  }
 
   const handleFormSubmit = handleSubmit((data) => {
     const parsedValue = parseFloat(data.value)
@@ -57,7 +46,7 @@ export function LogForm({ onSubmit, isLoading = false }: LogFormProps) {
     onSubmit({
       value: parsedValue,
       note: data.note || undefined,
-      photoUri: photoUri || undefined,
+      mediaItems: mediaItems.length > 0 ? mediaItems : undefined,
     })
   })
 
@@ -83,19 +72,7 @@ export function LogForm({ onSubmit, isLoading = false }: LogFormProps) {
       />
 
       <View style={styles.field}>
-        <Text style={styles.label}>Photo (optional)</Text>
-        {photoUri ? (
-          <View style={styles.photoContainer}>
-            <Image source={{ uri: photoUri }} style={styles.photoPreview} />
-            <TouchableOpacity style={styles.removePhotoButton} onPress={handleRemovePhoto}>
-              <Text style={styles.removePhotoText}>Remove</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.photoButton} onPress={handlePickPhoto}>
-            <Text style={styles.photoButtonText}>Add Photo</Text>
-          </TouchableOpacity>
-        )}
+        <MediaPicker items={mediaItems} onItemsChange={setMediaItems} />
       </View>
 
       <TouchableOpacity
@@ -119,45 +96,6 @@ const styles = StyleSheet.create({
   },
   field: {
     marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  photoContainer: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  photoPreview: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-  },
-  removePhotoButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#fee2e2',
-    borderRadius: 8,
-  },
-  removePhotoText: {
-    color: '#ef4444',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  photoButton: {
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderStyle: 'dashed',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  photoButtonText: {
-    color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '500',
   },
   submitButton: {
     backgroundColor: '#007AFF',

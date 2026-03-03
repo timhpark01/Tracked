@@ -1,7 +1,7 @@
 // src/features/logs/hooks/useUpdateLog.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { updateLog } from '../services/logs.service'
-import { uploadLogPhoto } from '@/lib/storage'
+import { uploadLogMedia, type MediaItem } from '@/lib/storage'
 import { useAuth } from '@/features/auth'
 import type { LogFieldValues } from '@/types/fields'
 import type { Database } from '@/types/database'
@@ -12,8 +12,7 @@ interface UpdateLogInput {
   activityId: string
   value?: number
   note?: string | null
-  photoUri?: string
-  existingImageUrls?: string[] | null
+  mediaItems?: MediaItem[]
   loggedAt?: string
   existingMetadata?: unknown // Pass existing metadata so we can update it
 }
@@ -28,16 +27,34 @@ export function useUpdateLog() {
         throw new Error('User must be authenticated to update a log')
       }
 
-      let image_urls: string[] | undefined = input.existingImageUrls ?? undefined
+      let image_urls: string[] | undefined
 
-      // Upload new photo if provided (local URI starts with file://)
-      if (input.photoUri && input.photoUri.startsWith('file://')) {
-        const tempId = `${Date.now()}`
-        const url = await uploadLogPhoto(user.id, tempId, input.photoUri)
-        image_urls = [url]
-      } else if (input.photoUri) {
-        // Keep existing remote URL
-        image_urls = [input.photoUri]
+      // Handle media items - separate existing URLs from new local files
+      if (input.mediaItems && input.mediaItems.length > 0) {
+        const existingUrls: string[] = []
+        const newItems: MediaItem[] = []
+
+        for (const item of input.mediaItems) {
+          if (item.uri.startsWith('file://')) {
+            newItems.push(item)
+          } else {
+            // Already uploaded - keep the URL
+            existingUrls.push(item.uri)
+          }
+        }
+
+        // Upload new items
+        const uploadedUrls: string[] = []
+        if (newItems.length > 0) {
+          const tempId = `${Date.now()}`
+          for (const item of newItems) {
+            const url = await uploadLogMedia(user.id, tempId, item)
+            uploadedUrls.push(url)
+          }
+        }
+
+        // Combine existing and newly uploaded URLs
+        image_urls = [...existingUrls, ...uploadedUrls]
       }
 
       // Update metadata fields with the new value

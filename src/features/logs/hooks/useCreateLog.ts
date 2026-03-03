@@ -1,7 +1,7 @@
 // src/features/logs/hooks/useCreateLog.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createLog } from '../services/logs.service'
-import { uploadLogPhoto } from '@/lib/storage'
+import { uploadLogMediaItems, type MediaItem } from '@/lib/storage'
 import { useAuth } from '@/features/auth'
 
 interface CreateLogInput {
@@ -9,7 +9,7 @@ interface CreateLogInput {
   activityId: string
   value: number
   note?: string
-  photoUri?: string
+  mediaItems?: MediaItem[]
   loggedAt?: string
 }
 
@@ -25,11 +25,10 @@ export function useCreateLog() {
 
       let image_urls: string[] | undefined
 
-      // Upload photo if provided
-      if (input.photoUri) {
+      // Upload media items if provided
+      if (input.mediaItems && input.mediaItems.length > 0) {
         const tempId = `${Date.now()}`
-        const url = await uploadLogPhoto(user.id, tempId, input.photoUri)
-        image_urls = [url]
+        image_urls = await uploadLogMediaItems(user.id, tempId, input.mediaItems)
       }
 
       return createLog({

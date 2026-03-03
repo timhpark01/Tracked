@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Image,
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
@@ -20,8 +19,21 @@ import { Ionicons } from '@expo/vector-icons'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { ControlledTextArea } from '@/components/forms'
 import { DurationPicker } from '@/components/DurationPicker'
-import { pickOrTakeImage } from '@/lib/storage'
+import { MediaPicker } from '@/components/MediaPicker'
+import { type MediaItem } from '@/lib/storage'
 import { useLog, useUpdateLog } from '@/features/logs'
+
+function isVideoUrl(url: string): boolean {
+  const extension = url.split('.').pop()?.toLowerCase()
+  return extension === 'mp4' || extension === 'mov' || extension === 'webm'
+}
+
+function urlsToMediaItems(urls: string[]): MediaItem[] {
+  return urls.map((url) => ({
+    uri: url,
+    type: isVideoUrl(url) ? 'video' : 'image',
+  }))
+}
 
 const logSchema = z.object({
   note: z.string().max(1000, 'Note must be 1000 characters or less').optional(),
@@ -37,7 +49,7 @@ export default function EditLogScreen() {
   const [date, setDate] = useState(new Date())
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [showTimePicker, setShowTimePicker] = useState(false)
-  const [photoUri, setPhotoUri] = useState<string | null>(null)
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
   const [hours, setHours] = useState(0)
   const [minutes, setMinutes] = useState(0)
   const [isInitialized, setIsInitialized] = useState(false)
@@ -60,7 +72,7 @@ export default function EditLogScreen() {
       setMinutes(totalMinutes % 60)
 
       if (log.image_urls && log.image_urls.length > 0) {
-        setPhotoUri(log.image_urls[0])
+        setMediaItems(urlsToMediaItems(log.image_urls))
       }
 
       reset({ note: log.note ?? '' })
@@ -69,17 +81,6 @@ export default function EditLogScreen() {
   }, [log, isInitialized, reset])
 
   const totalMinutes = hours * 60 + minutes
-
-  const handlePickPhoto = async () => {
-    const uri = await pickOrTakeImage()
-    if (uri) {
-      setPhotoUri(uri)
-    }
-  }
-
-  const handleRemovePhoto = () => {
-    setPhotoUri(null)
-  }
 
   const onDateChange = (_event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
@@ -114,7 +115,7 @@ export default function EditLogScreen() {
         activityId: log.activity_id,
         value: totalMinutes,
         note: data.note || null,
-        photoUri: photoUri || undefined,
+        mediaItems: mediaItems.length > 0 ? mediaItems : undefined,
         loggedAt: date.toISOString(),
         existingMetadata: log.metadata, // Pass existing metadata so fields get updated too
       },
@@ -261,22 +262,9 @@ export default function EditLogScreen() {
             />
           </View>
 
-          {/* Photo */}
+          {/* Media */}
           <View style={styles.section}>
-            <Text style={styles.label}>Photo (optional)</Text>
-            {photoUri ? (
-              <View style={styles.photoContainer}>
-                <Image source={{ uri: photoUri }} style={styles.photoPreview} />
-                <TouchableOpacity style={styles.removePhotoButton} onPress={handleRemovePhoto}>
-                  <Text style={styles.removePhotoText}>Remove</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity style={styles.photoButton} onPress={handlePickPhoto}>
-                <Ionicons name="camera-outline" size={20} color="#007AFF" />
-                <Text style={styles.photoButtonText}>Add Photo</Text>
-              </TouchableOpacity>
-            )}
+            <MediaPicker items={mediaItems} onItemsChange={setMediaItems} />
           </View>
 
           {/* Submit Button */}
@@ -383,43 +371,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#007AFF',
-  },
-  photoContainer: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  photoPreview: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-  },
-  removePhotoButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#fee2e2',
-    borderRadius: 8,
-  },
-  removePhotoText: {
-    color: '#ef4444',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  photoButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderStyle: 'dashed',
-    borderRadius: 8,
-  },
-  photoButtonText: {
-    color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '500',
   },
   submitButton: {
     backgroundColor: '#007AFF',

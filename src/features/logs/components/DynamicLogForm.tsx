@@ -3,20 +3,19 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Image,
   StyleSheet,
   ActivityIndicator,
-  TextInput,
 } from 'react-native'
 import { useState } from 'react'
 import { ControlledTextArea } from '@/components/forms'
 import { FieldInput } from '@/components/FieldInput'
-import { pickOrTakeImage } from '@/lib/storage'
+import { MediaPicker } from '@/components/MediaPicker'
+import { type MediaItem } from '@/lib/storage'
 import { useActivityFields } from '@/features/activities/hooks/useActivityFields'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import type { ActivityField, FieldValue } from '@/types/fields'
+import type { FieldValue } from '@/types/fields'
 
 const logSchema = z.object({
   note: z.string().max(1000, 'Note must be 1000 characters or less').optional(),
@@ -29,12 +28,12 @@ interface DynamicLogFormProps {
   onSubmit: (data: {
     fieldValues: Record<string, FieldValue>
     note?: string
-    photoUri?: string
+    mediaItems?: MediaItem[]
   }) => void
   isLoading?: boolean
   initialFieldValues?: Record<string, FieldValue>
   initialNote?: string
-  initialPhotoUri?: string
+  initialMediaItems?: MediaItem[]
 }
 
 export function DynamicLogForm({
@@ -43,7 +42,7 @@ export function DynamicLogForm({
   isLoading = false,
   initialFieldValues,
   initialNote,
-  initialPhotoUri,
+  initialMediaItems,
 }: DynamicLogFormProps) {
   const { data: fields, isLoading: fieldsLoading } = useActivityFields(activityId)
   const [fieldValues, setFieldValues] = useState<Record<string, string>>(
@@ -56,7 +55,7 @@ export function DynamicLogForm({
         )
       : {}
   )
-  const [photoUri, setPhotoUri] = useState<string | null>(initialPhotoUri ?? null)
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>(initialMediaItems ?? [])
 
   const { control, handleSubmit } = useForm<LogFormData>({
     resolver: zodResolver(logSchema),
@@ -64,17 +63,6 @@ export function DynamicLogForm({
       note: initialNote ?? '',
     },
   })
-
-  const handlePickPhoto = async () => {
-    const uri = await pickOrTakeImage()
-    if (uri) {
-      setPhotoUri(uri)
-    }
-  }
-
-  const handleRemovePhoto = () => {
-    setPhotoUri(null)
-  }
 
   const handleFieldChange = (fieldName: string, value: string) => {
     setFieldValues((prev) => ({
@@ -110,7 +98,7 @@ export function DynamicLogForm({
     onSubmit({
       fieldValues: processedFieldValues,
       note: data.note || undefined,
-      photoUri: photoUri || undefined,
+      mediaItems: mediaItems.length > 0 ? mediaItems : undefined,
     })
   })
 
@@ -155,19 +143,7 @@ export function DynamicLogForm({
       />
 
       <View style={styles.field}>
-        <Text style={styles.label}>Photo (optional)</Text>
-        {photoUri ? (
-          <View style={styles.photoContainer}>
-            <Image source={{ uri: photoUri }} style={styles.photoPreview} />
-            <TouchableOpacity style={styles.removePhotoButton} onPress={handleRemovePhoto}>
-              <Text style={styles.removePhotoText}>Remove</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.photoButton} onPress={handlePickPhoto}>
-            <Text style={styles.photoButtonText}>Add Photo</Text>
-          </TouchableOpacity>
-        )}
+        <MediaPicker items={mediaItems} onItemsChange={setMediaItems} />
       </View>
 
       <TouchableOpacity
@@ -212,45 +188,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#6b7280',
     fontSize: 14,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  photoContainer: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  photoPreview: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-  },
-  removePhotoButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#fee2e2',
-    borderRadius: 8,
-  },
-  removePhotoText: {
-    color: '#ef4444',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  photoButton: {
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderStyle: 'dashed',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  photoButtonText: {
-    color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '500',
   },
   submitButton: {
     backgroundColor: '#007AFF',
