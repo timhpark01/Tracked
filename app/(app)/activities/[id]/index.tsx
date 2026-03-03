@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useMemo } from 'react'
 import { Ionicons } from '@expo/vector-icons'
-import { useActivity, useDeleteActivity } from '@/features/activities'
+import { useActivity, useDeleteActivity, useActivityFields } from '@/features/activities'
 import { useProjects } from '@/features/projects'
 import { getLogsByActivity, LogEntry, useDeleteLog } from '@/features/logs'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -14,7 +14,13 @@ export default function ActivityDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { data: activity, isLoading, error } = useActivity(id ?? '')
   const { data: projects, isLoading: projectsLoading } = useProjects(id ?? '')
+  const { data: activityFields } = useActivityFields(id ?? '')
   const deleteActivity = useDeleteActivity()
+
+  // Derive primary field for unit-aware display
+  const primaryField = activityFields?.find((f) => f.is_primary) ?? activityFields?.[0]
+  const primaryUnit = primaryField?.unit ?? 'minutes'
+  const isTimeUnit = ['minutes', 'hours', 'mins', 'min', 'hr', 'hrs'].includes(primaryUnit.toLowerCase())
   const deleteLog = useDeleteLog()
   const queryClient = useQueryClient()
 
@@ -31,14 +37,12 @@ export default function ActivityDetailScreen() {
 
   // Compute analytics
   const analytics = useMemo(() => {
-    if (!logs) return { totalLogs: 0, totalMinutes: 0, totalHours: 0 }
+    if (!logs) return { totalLogs: 0, totalValue: 0 }
 
     const totalLogs = logs.length
-    const totalMinutes = logs.reduce((sum, log) => sum + log.value, 0)
-    const totalHours = Math.floor(totalMinutes / 60)
-    const remainingMinutes = totalMinutes % 60
+    const totalValue = logs.reduce((sum, log) => sum + log.value, 0)
 
-    return { totalLogs, totalMinutes, totalHours, remainingMinutes }
+    return { totalLogs, totalValue }
   }, [logs])
 
   // Compute project stats
@@ -131,12 +135,18 @@ export default function ActivityDetailScreen() {
     )
   }
 
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60)
-    const mins = minutes % 60
-    if (hours === 0) return `${mins}m`
-    if (mins === 0) return `${hours}h`
-    return `${hours}h ${mins}m`
+  const formatPrimaryValue = (val: number) => {
+    if (isTimeUnit) {
+      const unit = primaryUnit.toLowerCase()
+      if (unit === 'hours' || unit === 'hrs' || unit === 'hr') return `${val}h`
+      // Assume minutes
+      const hours = Math.floor(val / 60)
+      const mins = val % 60
+      if (hours === 0) return `${mins}m`
+      if (mins === 0) return `${hours}h`
+      return `${hours}h ${mins}m`
+    }
+    return `${val} ${primaryUnit}`
   }
 
   const formatLastLogged = (date: string | null) => {
@@ -202,8 +212,8 @@ export default function ActivityDetailScreen() {
               <Text style={styles.statLabel}>Total Logs</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statValue}>{formatDuration(analytics.totalMinutes)}</Text>
-              <Text style={styles.statLabel}>Total Time</Text>
+              <Text style={styles.statValue}>{formatPrimaryValue(analytics.totalValue)}</Text>
+              <Text style={styles.statLabel}>{isTimeUnit ? 'Total Time' : `Total ${primaryField?.name ?? primaryUnit}`}</Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>{visibleProjects.length}</Text>
@@ -253,7 +263,7 @@ export default function ActivityDetailScreen() {
                         </Text>
                         <Text style={styles.projectStatDot}>•</Text>
                         <Text style={styles.projectStat}>
-                          {formatDuration(stats?.totalMinutes ?? 0)}
+                          {formatPrimaryValue(stats?.totalMinutes ?? 0)}
                         </Text>
                         <Text style={styles.projectStatDot}>•</Text>
                         <Text style={styles.projectStat}>
@@ -284,6 +294,7 @@ export default function ActivityDetailScreen() {
                 <LogEntry
                   key={log.id}
                   log={log}
+                  unit={primaryUnit}
                   project={projectsById.get(log.project_id)}
                   onDelete={() => handleDeleteLog(log.id, log.project_id)}
                 />

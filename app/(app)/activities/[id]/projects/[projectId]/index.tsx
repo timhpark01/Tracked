@@ -5,14 +5,21 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useProject, useDeleteProject } from '@/features/projects'
 import { useLogs, useDeleteLog, LogHistory } from '@/features/logs'
+import { useActivityFields } from '@/features/activities'
 import { useAlwaysRefreshOnFocus } from '@/lib/query-client'
 
 export default function ProjectDetailScreen() {
   const { id: activityId, projectId } = useLocalSearchParams<{ id: string; projectId: string }>()
   const { data: project, isLoading, error } = useProject(projectId ?? '')
   const { data: logs, isLoading: logsLoading, refetch: refetchLogs } = useLogs(projectId ?? '')
+  const { data: activityFields } = useActivityFields(activityId ?? '')
   const deleteProject = useDeleteProject()
   const deleteLog = useDeleteLog()
+
+  // Get the primary field to determine the correct unit and whether this is a time-based activity
+  const primaryField = activityFields?.find((f) => f.is_primary) ?? activityFields?.[0]
+  const primaryUnit = primaryField?.unit ?? 'minutes'
+  const isTimeUnit = ['minutes', 'hours', 'mins', 'min', 'hr', 'hrs'].includes(primaryUnit.toLowerCase())
 
   // Refetch logs when screen gains focus (e.g., after editing a log)
   useAlwaysRefreshOnFocus(refetchLogs)
@@ -104,24 +111,37 @@ export default function ProjectDetailScreen() {
 
         {/* Analytics Card */}
         {(() => {
-          const totalMinutes = logs?.reduce((sum, log) => sum + log.value, 0) ?? 0
+          const totalValue = logs?.reduce((sum, log) => sum + log.value, 0) ?? 0
           const sessionCount = logs?.length ?? 0
-          const avgMinutes = sessionCount > 0 ? Math.round(totalMinutes / sessionCount) : 0
+          const avgValue = sessionCount > 0 ? Math.round(totalValue / sessionCount) : 0
 
-          const formatTime = (mins: number) => {
-            if (mins >= 60) {
-              const hours = Math.floor(mins / 60)
-              const minutes = mins % 60
-              return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`
+          const formatValue = (val: number) => {
+            if (isTimeUnit) {
+              const unit = primaryUnit.toLowerCase()
+              // If unit is hours, show as-is; if minutes, convert to h/m
+              if (unit === 'hours' || unit === 'hrs' || unit === 'hr') {
+                return `${val}h`
+              }
+              // Assume minutes
+              if (val >= 60) {
+                const hours = Math.floor(val / 60)
+                const minutes = val % 60
+                return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`
+              }
+              return `${val}m`
             }
-            return `${mins}m`
+            // Non-time unit: just show value + unit
+            return `${val} ${primaryUnit}`
           }
+
+          const totalLabel = isTimeUnit ? 'Total Time' : `Total ${primaryField?.name ?? primaryUnit}`
+          const avgLabel = isTimeUnit ? 'Avg Session' : 'Avg / Session'
 
           return (
             <View style={styles.analyticsCard}>
               <View style={styles.analyticsItem}>
-                <Text style={styles.analyticsValue}>{formatTime(totalMinutes)}</Text>
-                <Text style={styles.analyticsLabel}>Total Time</Text>
+                <Text style={styles.analyticsValue}>{formatValue(totalValue)}</Text>
+                <Text style={styles.analyticsLabel}>{totalLabel}</Text>
               </View>
               <View style={styles.analyticsDivider} />
               <View style={styles.analyticsItem}>
@@ -130,8 +150,8 @@ export default function ProjectDetailScreen() {
               </View>
               <View style={styles.analyticsDivider} />
               <View style={styles.analyticsItem}>
-                <Text style={styles.analyticsValue}>{formatTime(avgMinutes)}</Text>
-                <Text style={styles.analyticsLabel}>Avg Session</Text>
+                <Text style={styles.analyticsValue}>{formatValue(avgValue)}</Text>
+                <Text style={styles.analyticsLabel}>{avgLabel}</Text>
               </View>
             </View>
           )
@@ -153,7 +173,7 @@ export default function ProjectDetailScreen() {
           ) : (
             <LogHistory
               logs={logs ?? []}
-              unit="minutes"
+              unit={primaryUnit}
               project={{ name: project.name, color: project.color }}
               onDeleteLog={(logId) =>
                 deleteLog.mutate({ logId, projectId: project.id })
