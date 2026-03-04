@@ -58,7 +58,7 @@ export default function HomeScreen() {
 
       {/* Feed */}
       <View style={styles.content}>
-        <FeedList feedType={activeTab === 0 ? 'public' : 'following'} key={activeTab} />
+        <FeedList feedType={activeTab === 0 ? 'public' : 'following'} />
       </View>
     </View>
   )

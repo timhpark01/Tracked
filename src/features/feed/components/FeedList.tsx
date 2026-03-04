@@ -3,9 +3,11 @@ import { useRef, useCallback, useMemo } from 'react'
 import {
   FlatList,
   View,
+  Text,
   ActivityIndicator,
   RefreshControl,
   StyleSheet,
+  Pressable,
 } from 'react-native'
 import { useFeed } from '../hooks/useFeed'
 import { FeedItem } from './FeedItem'
@@ -27,6 +29,7 @@ export function FeedList({ feedType = 'following', targetUserId }: FeedListProps
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isError,
     refetch,
     isRefetching,
   } = useFeed(feedType, targetUserId)
@@ -93,6 +96,18 @@ export function FeedList({ feedType = 'following', targetUserId }: FeedListProps
     [isFetchingNextPage]
   )
 
+  // Show error state with retry
+  if (isError && !data) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Failed to load feed</Text>
+        <Pressable style={styles.retryButton} onPress={() => refetch()}>
+          <Text style={styles.retryButtonText}>Tap to retry</Text>
+        </Pressable>
+      </View>
+    )
+  }
+
   // Show skeleton on initial load
   if (isLoading) {
     return (
@@ -142,6 +157,28 @@ const styles = StyleSheet.create({
   skeletonContainer: {
     flex: 1,
     paddingTop: 8,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#6b7280',
+    marginBottom: 16,
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
   },
   footer: {
     paddingVertical: 16,

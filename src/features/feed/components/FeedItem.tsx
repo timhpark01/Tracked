@@ -124,10 +124,6 @@ function FeedItemComponent({ log, reactionInfo, commentCount }: FeedItemProps) {
               </View>
             )}
           </View>
-
-          {log.note && (
-            <Text style={styles.note} numberOfLines={2}>{log.note}</Text>
-          )}
         </Pressable>
 
         {/* Media */}
@@ -161,6 +157,16 @@ function FeedItemComponent({ log, reactionInfo, commentCount }: FeedItemProps) {
             <Text style={styles.actionCount}>{commentCount ?? 0}</Text>
           </Pressable>
         </View>
+
+        {/* Caption */}
+        {log.note && (
+          <Pressable onPress={handleCommentPress} style={styles.captionContainer}>
+            <Text style={styles.caption} numberOfLines={2}>
+              <Text style={styles.captionUsername}>{user.username}</Text>
+              {'  '}{log.note}
+            </Text>
+          </Pressable>
+        )}
       </View>
     </View>
   )
@@ -275,12 +281,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  note: {
-    fontSize: 14,
-    color: '#6b7280',
-    lineHeight: 20,
-    marginBottom: 10,
-  },
   mediaContainer: {
     marginTop: 8,
     marginBottom: 4,
@@ -304,5 +304,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#9ca3af',
     fontWeight: '500',
+  },
+  captionContainer: {
+    marginTop: 8,
+  },
+  caption: {
+    fontSize: 14,
+    color: '#374151',
+    lineHeight: 20,
+  },
+  captionUsername: {
+    fontWeight: '600',
+    color: '#111827',
   },
 })
