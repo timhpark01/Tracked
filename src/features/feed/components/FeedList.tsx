@@ -10,6 +10,7 @@ import {
 import { useFeed } from '../hooks/useFeed'
 import { FeedItem } from './FeedItem'
 import { FeedEmpty } from './FeedEmpty'
+import { FeedSkeleton } from './FeedSkeleton'
 import { useReactionsBatch } from '@/features/reactions'
 import { useCommentCountBatch } from '@/features/comments'
 import type { FeedLog, FeedType } from '../services/feed.service'
@@ -92,11 +93,11 @@ export function FeedList({ feedType = 'following', targetUserId }: FeedListProps
     [isFetchingNextPage]
   )
 
-  // Show loading state on initial load
+  // Show skeleton on initial load
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View style={styles.skeletonContainer}>
+        <FeedSkeleton />
       </View>
     )
   }
@@ -138,10 +139,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     flexGrow: 1,
   },
-  loadingContainer: {
+  skeletonContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingTop: 8,
   },
   footer: {
     paddingVertical: 16,
