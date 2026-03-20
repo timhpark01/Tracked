@@ -1,5 +1,4 @@
 // src/features/profiles/components/ProfileTabs.tsx
-import { useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
@@ -9,12 +8,13 @@ interface Tab {
   key: TabKey
   label: string
   icon: keyof typeof Ionicons.glyphMap
+  activeIcon: keyof typeof Ionicons.glyphMap
 }
 
 const TABS: Tab[] = [
-  { key: 'feed', label: 'Posts', icon: 'newspaper-outline' },
-  { key: 'skills', label: 'Skills', icon: 'trophy-outline' },
-  { key: 'activities', label: 'Activities', icon: 'list-outline' },
+  { key: 'feed', label: 'Posts', icon: 'newspaper-outline', activeIcon: 'newspaper' },
+  { key: 'skills', label: 'Skills', icon: 'trophy-outline', activeIcon: 'trophy' },
+  { key: 'activities', label: 'Activities', icon: 'list-outline', activeIcon: 'list' },
 ]
 
 interface ProfileTabsProps {
@@ -32,10 +32,11 @@ export function ProfileTabs({ activeTab, onTabChange }: ProfileTabsProps) {
             key={tab.key}
             style={[styles.tab, isActive && styles.activeTab]}
             onPress={() => onTabChange(tab.key)}
+            activeOpacity={0.7}
           >
             <Ionicons
-              name={tab.icon}
-              size={20}
+              name={isActive ? tab.activeIcon : tab.icon}
+              size={18}
               color={isActive ? '#007AFF' : '#9ca3af'}
             />
             <Text style={[styles.tabLabel, isActive && styles.activeTabLabel]}>
@@ -55,26 +56,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    borderBottomColor: '#e5e7eb',
   },
   tab: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    gap: 6,
+    paddingVertical: 10,
+    gap: 3,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
   activeTab: {
-    borderBottomWidth: 2,
     borderBottomColor: '#007AFF',
   },
   tabLabel: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '500',
     color: '#9ca3af',
   },
   activeTabLabel: {
     color: '#007AFF',
+    fontWeight: '600',
   },
 })

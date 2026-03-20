@@ -8,6 +8,7 @@ import {
   Pressable,
   StyleSheet,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -85,7 +86,7 @@ export default function ProfileScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color="#007AFF" />
       </View>
     )
   }
@@ -136,10 +137,10 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Profile Header */}
-      <View style={styles.header}>
+      {/* Profile Header Card */}
+      <View style={styles.headerCard}>
         {/* Avatar */}
-        <View style={styles.avatarSection}>
+        <View style={styles.avatarRing}>
           {profile.avatar_url ? (
             <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
           ) : (
@@ -151,45 +152,59 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Username and Stats */}
-        <View style={styles.infoSection}>
-          <View style={styles.usernameRow}>
-            <Text style={styles.username}>@{profile.username}</Text>
-            {(streak ?? 0) > 0 && (
-              <View style={styles.streakBadge}>
-                <Ionicons name="flame" size={12} color="#fff" />
-                <Text style={styles.streakText}>{streak}</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Stats Row */}
-          <View style={styles.statsRow}>
-            <Pressable
-              style={styles.statItem}
-              onPress={() => router.push(`/followers/${user?.id}`)}
-            >
-              <Text style={styles.statNumber}>{followers?.length ?? 0}</Text>
-              <Text style={styles.statLabel}>Followers</Text>
-            </Pressable>
-            <Pressable
-              style={styles.statItem}
-              onPress={() => router.push(`/following/${user?.id}`)}
-            >
-              <Text style={styles.statNumber}>{following?.length ?? 0}</Text>
-              <Text style={styles.statLabel}>Following</Text>
-            </Pressable>
-          </View>
-
-                  </View>
-      </View>
-
-      {/* Bio */}
-      {profile.bio && (
-        <View style={styles.bioSection}>
-          <Text style={styles.bio}>{profile.bio}</Text>
+        {/* Username + Streak */}
+        <View style={styles.usernameRow}>
+          <Text style={styles.username}>@{profile.username}</Text>
+          {(streak ?? 0) > 0 && (
+            <View style={styles.streakBadge}>
+              <Ionicons name="flame" size={13} color="#fff" />
+              <Text style={styles.streakText}>{streak}</Text>
+            </View>
+          )}
         </View>
-      )}
+
+        {/* Bio */}
+        {profile.bio && (
+          <Text style={styles.bio} numberOfLines={3}>{profile.bio}</Text>
+        )}
+
+        {/* Stats Row */}
+        <View style={styles.statsRow}>
+          <Pressable
+            style={styles.statItem}
+            onPress={() => router.push(`/followers/${user?.id}`)}
+          >
+            <Text style={styles.statNumber}>{followers?.length ?? 0}</Text>
+            <Text style={styles.statLabel}>Followers</Text>
+          </Pressable>
+          <View style={styles.statDivider} />
+          <Pressable
+            style={styles.statItem}
+            onPress={() => router.push(`/following/${user?.id}`)}
+          >
+            <Text style={styles.statNumber}>{following?.length ?? 0}</Text>
+            <Text style={styles.statLabel}>Following</Text>
+          </Pressable>
+          {(streak ?? 0) > 0 && (
+            <>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={[styles.statNumber, styles.streakNumber]}>{streak}</Text>
+                <Text style={styles.statLabel}>Day Streak</Text>
+              </View>
+            </>
+          )}
+        </View>
+
+        {/* Edit Profile Button */}
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => router.push('/profile/edit')}
+        >
+          <Ionicons name="pencil-outline" size={14} color="#007AFF" />
+          <Text style={styles.editButtonText}>Edit Profile</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Tabs */}
       <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
@@ -203,13 +218,13 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f9fafb',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#f9fafb',
   },
   errorText: {
     color: '#ef4444',
@@ -251,99 +266,132 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   primaryButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#007AFF',
     paddingVertical: 14,
     paddingHorizontal: 32,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   primaryButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
-  // Header
-  header: {
-    flexDirection: 'row',
-    padding: 16,
-    paddingBottom: 12,
-    gap: 16,
+  // Header card
+  headerCard: {
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    paddingTop: 24,
+    paddingBottom: 20,
+    paddingHorizontal: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
   },
-  avatarSection: {},
+  avatarRing: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: '#007AFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    padding: 2,
+  },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     backgroundColor: '#e5e7eb',
   },
   avatarPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     backgroundColor: '#e5e7eb',
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitial: {
-    fontSize: 32,
+    fontSize: 36,
     color: '#6b7280',
     fontWeight: '600',
-  },
-  streakBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f97316',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
-    gap: 2,
-  },
-  streakText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  infoSection: {
-    flex: 1,
-    justifyContent: 'center',
   },
   usernameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   username: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#111827',
   },
-  // Stats row
-  statsRow: {
+  streakBadge: {
     flexDirection: 'row',
-    marginBottom: 12,
-    gap: 24,
-  },
-  statItem: {
     alignItems: 'center',
+    backgroundColor: '#f97316',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 10,
+    gap: 3,
   },
-  statNumber: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#111827',
-  },
-  statLabel: {
+  streakText: {
+    color: '#fff',
     fontSize: 12,
-    color: '#6b7280',
-  },
-    // Bio
-  bioSection: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    fontWeight: '700',
   },
   bio: {
     fontSize: 14,
     color: '#4b5563',
     lineHeight: 20,
+    textAlign: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 8,
+  },
+  // Stats row
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  statItem: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  statNumber: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  streakNumber: {
+    color: '#f97316',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: '#e5e7eb',
+  },
+  // Edit button
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#007AFF',
+  },
+  editButtonText: {
+    color: '#007AFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   // Tab content
   tabContent: {
